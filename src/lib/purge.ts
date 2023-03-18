@@ -111,7 +111,7 @@ export async function purge() {
 			if (!member) return;
 
 			if (member.roles.cache.has(CONFIG.whitelist_manager.inactivity.vacation_role)) {
-				client.logger.info(`Skipping member <@${member.id}>} as they have the vacation role`);
+				client.logger.info(`Skipping member <@${member.id}> as they have the vacation role`);
 				const embed = new EmbedBuilder()
 					.setColor('Blue')
 					.setAuthor({
@@ -120,7 +120,7 @@ export async function purge() {
 					})
 					.setTitle('Skipping Member (Vacation)')
 					.addFields([
-						{ name: 'Member ID', value: `<@${member.id}>}`, inline: true },
+						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
 					.setTimestamp();
@@ -130,7 +130,7 @@ export async function purge() {
 			}
 
 			await member.send(CONFIG.whitelist_manager.inactivity.message).catch(async () => {
-				client.logger.warn(`Failed to send message to member <@${member.id}>}`);
+				client.logger.warn(`Failed to send message to member <@${member.id}>`);
 				const embed = new EmbedBuilder()
 					.setColor('Red')
 					.setAuthor({
@@ -139,7 +139,7 @@ export async function purge() {
 					})
 					.setTitle('Failed to Send Member Kick Message (DMs Disabled)')
 					.addFields([
-						{ name: 'Member ID', value: `<@${member.id}>}`, inline: true },
+						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
 					.setTimestamp();
@@ -149,7 +149,7 @@ export async function purge() {
 			});
 
 			await member.kick('Inactive').catch(async () => {
-				client.logger.warn(`Failed to kick member <@<@${member.id}>}>`);
+				client.logger.warn(`Failed to kick member ${member.id}`);
 
 				const embed = new EmbedBuilder()
 					.setColor('Red')
@@ -159,7 +159,7 @@ export async function purge() {
 					})
 					.setTitle('Failed to Kick Member (Insufficient Permissions)')
 					.addFields([
-						{ name: 'Member ID', value: `<@<@${member.id}>}>`, inline: true },
+						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
 					.setTimestamp();
@@ -177,7 +177,7 @@ export async function purge() {
 				.setTitle('Member Purged (Inactive)')
 				.setImage(member.user.displayAvatarURL())
 				.addFields([
-					{ name: 'Member ID', value: `<@${member.id}>}`, inline: true },
+					{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 					{ name: 'Member Name', value: `${member.displayName}`, inline: true },
 					{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 				])
