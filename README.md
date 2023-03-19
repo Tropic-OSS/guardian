@@ -4,6 +4,10 @@ Using "Guardian", you can customize your interview process with your own set of 
 
 Whether you're an experienced Minecraft server admin or just starting out, "Guardian" is the perfect tool to help you streamline the application and interview process and manage your whitelist with ease.
 
+## Documentation
+
+Coming soon, I am still ironing out some kinks =)
+
 Mod for Guardian
 
 https://github.com/tropicdev/elder-daemon
