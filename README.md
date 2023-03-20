@@ -6,7 +6,8 @@ Whether you're an experienced Minecraft server admin or just starting out, "Guar
 
 ## Documentation
 
-Coming soon, I am still ironing out some kinks =)
+[Documentation](https://guardian.bitecodelabs.com/)
+Not complete, I am still ironing out some kinks =)
 
 Mod for Guardian
 
