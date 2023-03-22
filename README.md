@@ -11,7 +11,7 @@ Not complete, I am still ironing out some kinks =)
 
 Mod for Guardian
 
-https://github.com/tropicdev/elder-daemon
+https://github.com/BiteCodeLabs/elder-daemon
 
 ## License
 
