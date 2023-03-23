@@ -1,6 +1,6 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
-import { Events, GuildMember, TextChannel, type Interaction } from "discord.js";
+import { Interaction, Events, GuildMember, TextChannel } from "discord.js";
 import { client } from "../..";
 import { db } from "../../database/db";
 import { BUTTON_IDS } from "../../lib/constants";
