@@ -1,6 +1,6 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
-import { Interaction, Events, GuildMember, TextChannel } from "discord.js";
+import { Interaction, Events, TextChannel, ThreadChannel, ButtonInteraction, GuildMember } from "discord.js";
 import { client } from "../..";
 import { db } from "../../database/db";
 import { BUTTON_IDS } from "../../lib/constants";
@@ -36,15 +36,24 @@ export class JoinThreadEvent extends Listener {
 
             if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
 
+            const threadChannel = thread as ThreadChannel;
+
             const admin = channel.guild.members.cache.get(interaction.user.id)
 
 			if (!admin) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
 
-            return await thread.members.add(admin)
+            return this.joinInterview(admin, interaction, threadChannel)
 
 		} catch (error) {
 			client.logger.error(error);
 			return interaction.reply({ content: 'Something went wrong', ephemeral: true });
 		}
+    }
+
+    private async joinInterview(admin: GuildMember, interaction: ButtonInteraction, thread: ThreadChannel) {
+        await thread.members.add(admin).catch((error) => {
+            client.logger.error(error);
+            return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
+        })
     }
 }
