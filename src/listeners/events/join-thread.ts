@@ -35,7 +35,9 @@ export class JoinThreadEvent extends Listener {
 
             if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
 
-            const admin = interaction.member as GuildMember
+            const admin = interaction.member as GuildMember;
+
+			if (!admin) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
 
             return await thread.members.add(admin)
 
