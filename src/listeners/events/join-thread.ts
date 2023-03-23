@@ -30,7 +30,6 @@ export class JoinThreadEvent extends Listener {
             if (!channel) return interaction.reply({ content: 'Could not find channel in guild', ephemeral: true });
 
             await channel.guild.channels.fetch()
-            await channel.guild.members.fetch()
 
             const thread = await channel.threads.fetch(data.thread_id);
 
@@ -38,11 +37,21 @@ export class JoinThreadEvent extends Listener {
 
             const threadChannel = thread as ThreadChannel;
 
-            const admin = channel.guild.members.cache.get(interaction.user.id)
+            const interactionUser = await interaction.guild!.members.fetch(interaction.user.id).catch((error) => {
+                client.logger.error(error);
+                return interaction.reply({ content: 'Something went wrong while getting user', ephemeral: true });
+            })
 
-			if (!admin) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
+			if (!interactionUser) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
 
-            return this.joinInterview(admin, interaction, threadChannel)
+            const admin = interactionUser as GuildMember;
+
+            await threadChannel.members.add(admin).catch((error) => {
+                client.logger.error(error);
+                return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
+            })
+
+            return
 
 		} catch (error) {
 			client.logger.error(error);
@@ -50,10 +59,5 @@ export class JoinThreadEvent extends Listener {
 		}
     }
 
-    private async joinInterview(admin: GuildMember, interaction: ButtonInteraction, thread: ThreadChannel) {
-        await thread.members.add(admin).catch((error) => {
-            client.logger.error(error);
-            return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
-        })
-    }
+
 }
