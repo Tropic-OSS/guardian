@@ -30,12 +30,13 @@ export class JoinThreadEvent extends Listener {
             if (!channel) return interaction.reply({ content: 'Could not find channel in guild', ephemeral: true });
 
             await channel.guild.channels.fetch()
+            await channel.guild.members.fetch()
 
             const thread = await channel.threads.fetch(data.thread_id);
 
             if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
 
-            const admin = interaction.member as GuildMember;
+            const admin = channel.guild.members.cache.get(interaction.user.id)
 
 			if (!admin) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
 
