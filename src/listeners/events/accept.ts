@@ -40,7 +40,7 @@ export class AcceptButtonEvent extends Listener {
 
 			const notification = settings.interviewMessage.replace(/{member}/g, applicant.toString());
 
-			applicant.roles.add(role!);
+			await applicant.roles.add(role!);
 
 			await applicant.send(`You have been accepted for an interview in ${channel}!`).catch(async (error) => {
 				client.logger.error(error as Error);
