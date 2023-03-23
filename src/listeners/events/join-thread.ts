@@ -1,6 +1,6 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
-import { Interaction, Events, TextChannel } from "discord.js";
+import { Interaction, Events, TextChannel, ThreadChannel, GuildMember } from "discord.js";
 import { client } from "../..";
 import { db } from "../../database/db";
 import { BUTTON_IDS } from "../../lib/constants";
@@ -12,52 +12,32 @@ export class JoinThreadEvent extends Listener {
         if (!interaction.isButton() || interaction.member?.user.bot || interaction.customId !== BUTTON_IDS.JOIN_THREAD) return;
 
         try {
+            const settings = {
+				interviewChannel: CONFIG.interviews.channel,
+			};
             
-            console.log("Test")
-            
-            // const settings = {
-			// 	interviewChannel: CONFIG.interviews.channel,
-			// };
-            
-			// const data = await db.selectFrom('interview').select(['interview.thread_id']).where('application_id', '=', interaction.message.id).executeTakeFirst();
+			const data = await db.selectFrom('interview').select(['interview.thread_id']).where('application_id', '=', interaction.message.id).executeTakeFirst();
 
-			// if (!data) return interaction.reply({ content: 'Could not find interview in database', ephemeral: true });
+			if (!data) return interaction.reply({ content: 'Could not find interview in database', ephemeral: true });
 
-			// const applicant = await interaction.guild?.members.fetch(data.thread_id);
+            const channel = (await interaction.guild?.channels.fetch(settings.interviewChannel)) as TextChannel;
 
-			// if (!applicant) return interaction.reply({ content: 'Could not find applicant in guild', ephemeral: true });
+            if (!channel) return interaction.reply({ content: 'Could not find channel in guild', ephemeral: true });
 
-            // const channel = (await applicant.guild.channels.fetch(settings.interviewChannel)) as TextChannel;
+            const thread = await channel.threads.fetch(data.thread_id);
 
-            // if (!channel) return interaction.reply({ content: 'Could not find channel in guild', ephemeral: true });
+            if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
 
-            // await channel.guild.channels.fetch()
+            const threadChannel = thread as ThreadChannel;
 
-            // const thread = await channel.threads.fetch(data.thread_id);
+            const admin = interaction.member as GuildMember
 
-            // console.log("Hi");
+			if (!admin) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
 
-            // if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
-
-            // // const threadChannel = thread as ThreadChannel;
-
-            // console.log("Hit")
-
-            // const interactionUser = await interaction.guild!.members.fetch(interaction.user.id).catch((error) => {
-            //     client.logger.error(error);
-            //     return interaction.reply({ content: 'Something went wrong while getting user', ephemeral: true });
-            // })
-
-			// if (!interactionUser) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
-
-            // console.log(interactionUser)
-
-            // // await threadChannel.members.add(admin).catch((error) => {
-            // //     client.logger.error(error);
-            // //     return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
-            // // })
-
-            return
+            return await threadChannel.members.add(admin).catch((error) => {
+                client.logger.error(error);
+                return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
+            })
 
 		} catch (error) {
 			client.logger.error(error);
