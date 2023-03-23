@@ -1,6 +1,6 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
-import { Interaction, Events, TextChannel, GuildMember } from "discord.js";
+import { Interaction, Events, TextChannel } from "discord.js";
 import { client } from "../..";
 import { db } from "../../database/db";
 import { BUTTON_IDS } from "../../lib/constants";
@@ -33,9 +33,13 @@ export class JoinThreadEvent extends Listener {
 
             const thread = await channel.threads.fetch(data.thread_id);
 
+            console.log("Hi");
+
             if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
 
             // const threadChannel = thread as ThreadChannel;
+
+            console.log("Hit")
 
             const interactionUser = await interaction.guild!.members.fetch(interaction.user.id).catch((error) => {
                 client.logger.error(error);
@@ -44,9 +48,7 @@ export class JoinThreadEvent extends Listener {
 
 			if (!interactionUser) return interaction.reply({ content: 'Could not find admin', ephemeral: true });
 
-            const admin = interactionUser as GuildMember;
-
-            console.log(admin);
+            console.log(interactionUser)
 
             // await threadChannel.members.add(admin).catch((error) => {
             //     client.logger.error(error);
