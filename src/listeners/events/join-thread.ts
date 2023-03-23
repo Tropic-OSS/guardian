@@ -1,6 +1,6 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
-import { Interaction, Events, TextChannel, ThreadChannel, ButtonInteraction, GuildMember } from "discord.js";
+import { Interaction, Events, TextChannel, GuildMember } from "discord.js";
 import { client } from "../..";
 import { db } from "../../database/db";
 import { BUTTON_IDS } from "../../lib/constants";
@@ -35,7 +35,7 @@ export class JoinThreadEvent extends Listener {
 
             if (!thread) return interaction.reply({ content: 'Could not find thread in guild', ephemeral: true });
 
-            const threadChannel = thread as ThreadChannel;
+            // const threadChannel = thread as ThreadChannel;
 
             const interactionUser = await interaction.guild!.members.fetch(interaction.user.id).catch((error) => {
                 client.logger.error(error);
@@ -46,10 +46,12 @@ export class JoinThreadEvent extends Listener {
 
             const admin = interactionUser as GuildMember;
 
-            await threadChannel.members.add(admin).catch((error) => {
-                client.logger.error(error);
-                return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
-            })
+            console.log(admin);
+
+            // await threadChannel.members.add(admin).catch((error) => {
+            //     client.logger.error(error);
+            //     return interaction.reply({ content: 'Something went wrong while adding member', ephemeral: true });
+            // })
 
             return
 
