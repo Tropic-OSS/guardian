@@ -3,7 +3,7 @@ import { Listener } from '@sapphire/framework';
 import { ButtonInteraction, ChannelType, EmbedBuilder, Events, GuildMember, Interaction, TextChannel } from 'discord.js';
 import { client } from '../..';
 import { db } from '../../database/db';
-import { BUTTON_IDS } from '../../lib/constants';
+import { ACCEPTED_MEMBER_ROW, BUTTON_IDS } from '../../lib/constants';
 import { CONFIG } from '../../lib/setup';
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Accept Member' })
@@ -79,7 +79,7 @@ export class AcceptButtonEvent extends Listener {
 				.setTimestamp()
 				.setFooter({ text: `Member accepted by ${interaction.member!.user.username}` });
 
-			return await interaction.update({ embeds: [newEmbed], components: [] }).catch((error) => {
+			return await interaction.update({ embeds: [newEmbed], components: [ACCEPTED_MEMBER_ROW] }).catch((error) => {
 				client.logger.error(error);
 				return interaction.reply({ content: 'Something went wrong trying to accepting member', ephemeral: true });
 			});
