@@ -1,11 +1,11 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ButtonInteraction, EmbedBuilder, Events, GuildMember, Interaction, Message, StageChannel, TextChannel } from 'discord.js';
-import { client } from '../..';
-import { db, timeoutCache } from '../../database/db';
-import { APPLICATION_ROW, BUTTON_IDS } from '../../lib/constants';
-import { CONFIG } from '../../lib/setup';
-import type { Responses } from '../../lib/types';
+import { client } from '..';
+import { db, timeoutCache } from '../database/db';
+import { APPLICATION_ROW, BUTTON_IDS } from '../lib/constants';
+import { CONFIG } from '../lib/setup';
+import type { Responses } from '../lib/types';
 const wait = require('node:timers/promises').setTimeout;
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Member Apply' })

@@ -1,10 +1,10 @@
 import { ApplyOptions } from "@sapphire/decorators";
 import { Listener } from "@sapphire/framework";
 import { Interaction, Events, TextChannel, ThreadChannel, GuildMember } from "discord.js";
-import { client } from "../..";
-import { db } from "../../database/db";
-import { BUTTON_IDS } from "../../lib/constants";
-import { CONFIG } from "../../lib/setup";
+import { client } from "..";
+import { db } from "../database/db";
+import { BUTTON_IDS } from "../lib/constants";
+import { CONFIG } from "../lib/setup";
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Join Interview Thread' })
 export class JoinThreadEvent extends Listener {

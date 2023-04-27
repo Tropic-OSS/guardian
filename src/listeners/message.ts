@@ -1,9 +1,9 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { EmbedBuilder, Events, Message, type TextChannel } from 'discord.js';
-import { client } from '../..';
-import { db } from '../../database/db';
-import { CONFIG } from '../../lib/setup';
+import { client } from '..';
+import { db } from '../database/db';
+import { CONFIG } from '../lib/setup';
 
 @ApplyOptions<Listener.Options>({ event: Events.MessageDelete, name: 'Handle Message Deletion' })
 export class MessageRemove extends Listener {

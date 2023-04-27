@@ -1,10 +1,10 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ButtonInteraction, ChannelType, EmbedBuilder, Events, GuildMember, Interaction, TextChannel } from 'discord.js';
-import { client } from '../..';
-import { db } from '../../database/db';
-import { ACCEPTED_MEMBER_ROW, BUTTON_IDS } from '../../lib/constants';
-import { CONFIG } from '../../lib/setup';
+import { db } from '../database/db';
+import { ACCEPTED_MEMBER_ROW, BUTTON_IDS } from '../lib/constants';
+import { CONFIG } from '../lib/setup';
+import { client } from '..';
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Accept Member' })
 export class AcceptButtonEvent extends Listener {

@@ -2,10 +2,10 @@ import { EmbedBuilder, Events, GuildBan, GuildMember, TextChannel } from 'discor
 import { Listener } from '@sapphire/framework';
 import { ApplyOptions } from '@sapphire/decorators';
 import { z } from 'zod';
-import { db } from '../../database/db';
-import { client } from '../..';
-import { io } from '../../server/socket';
-import { CONFIG } from '../../lib/setup';
+import { db } from '../database/db';
+import { client } from '..';
+import { io } from '../server/socket';
+import { CONFIG } from '../lib/setup';
 
 @ApplyOptions<Listener.Options>({ event: Events.GuildBanAdd, name: 'Handle Guild Member Ban' })
 export class MemberBan extends Listener {

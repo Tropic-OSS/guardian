@@ -12,9 +12,9 @@ import {
 	TextInputStyle,
 	type Interaction
 } from 'discord.js';
-import { client } from '../..';
-import { db } from '../../database/db';
-import { APPLICATION_ROW, BUTTON_IDS, DISABLED_APPLICATION_ROW, MODAL_IDS } from '../../lib/constants';
+import { client } from '..';
+import { db } from '../database/db';
+import { APPLICATION_ROW, BUTTON_IDS, DISABLED_APPLICATION_ROW, MODAL_IDS } from '../lib/constants';
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Deny Member' })
 export class DenyButtonEvent extends Listener {
