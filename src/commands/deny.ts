@@ -2,8 +2,8 @@ import { ApplyOptions, RequiresGuildContext } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { send } from '@sapphire/plugin-editable-commands';
 import { EmbedBuilder, Message } from 'discord.js';
-import { client } from '../..';
-import { db } from '../../database/db';
+import { client } from '..';
+import { db } from '../database/db';
 
 @ApplyOptions<Command.Options>({
 	description: 'Deny Member',

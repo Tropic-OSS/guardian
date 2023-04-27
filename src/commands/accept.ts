@@ -1,12 +1,12 @@
-import { client } from '../..';
+import { client } from '..';
 import { Command } from '@sapphire/framework';
 import { send } from '@sapphire/plugin-editable-commands';
 import { EmbedBuilder, Message, TextChannel } from 'discord.js';
 import { ApplyOptions, RequiresGuildContext } from '@sapphire/decorators';
 import { z } from 'zod';
-import { db } from '../../database/db';
-import { CONFIG } from '../../lib/setup';
-import { io } from '../../server/socket';
+import { db } from '../database/db';
+import { CONFIG } from '../lib/setup';
+import { io } from '../server/socket';
 
 @ApplyOptions<Command.Options>({
 	description: 'Accept Member',

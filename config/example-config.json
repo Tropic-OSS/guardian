@@ -34,5 +34,12 @@
 			"timezone": "America/New_York",
 			"cron": "0 1 * * *"
 		}
+	},
+	"database": {
+		"host": "localhost",
+		"port": 3306,
+		"user": "",
+		"password": "",
+		"name": ""
 	}
 }

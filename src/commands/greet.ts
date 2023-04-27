@@ -2,9 +2,9 @@ import { ApplyOptions, RequiresGuildContext } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { send } from '@sapphire/plugin-editable-commands';
 import { ActionRowBuilder, ButtonBuilder, EmbedBuilder, Message, TextChannel } from 'discord.js';
-import { client } from '../..';
-import { BUTTON_IDS } from '../../lib/constants';
-import { CONFIG } from '../../lib/setup';
+import { client } from '..';
+import { BUTTON_IDS } from '../lib/constants';
+import { CONFIG } from '../lib/setup';
 
 @ApplyOptions<Command.Options>({
 	description: 'Send application embed to specified member join channel'

@@ -21,7 +21,6 @@ export const APPLICATION_ROW = new ActionRowBuilder<ButtonBuilder>()
 export const ACCEPTED_MEMBER_ROW = new ActionRowBuilder<ButtonBuilder>()
 	.addComponents(new ButtonBuilder().setCustomId(BUTTON_IDS.JOIN_THREAD).setStyle(3).setLabel('Join Thread').setEmoji('🚀'))
 
-
 export const DISABLED_APPLICATION_ROW = new ActionRowBuilder<ButtonBuilder>().addComponents(
 	new ButtonBuilder().setStyle(4).setCustomId('disabled').setLabel('Please wait....').setDisabled(true)
 );

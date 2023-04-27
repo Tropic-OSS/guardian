@@ -1,19 +1,7 @@
 import fastify from 'fastify';
+import { logger } from '../lib/logger';
 
-// Instantiate Fastify with some config
-const api = fastify({
-	logger: {
-		level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-		formatters: {
-			level: (label) => {
-				return { level: label };
-			},
-			log: (obj) => {
-				return { ...obj };
-			}
-		}
-	}
-});
+const api = fastify({});
 
 //Middleware
 api.register(require('@fastify/websocket'), {
@@ -29,7 +17,7 @@ export async function startApiServer(port: number) {
 	try {
 		await api.listen({ port: port });
 	} catch (err) {
-		api.log.error(err);
+		logger.error(err);
 		process.exit(1);
 	}
 }
