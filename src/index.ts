@@ -3,6 +3,7 @@ import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits, Partials } from 'discord.js';
 import { CONFIG } from './lib/setup';
 import { purge } from './lib/purge';
+import { startApiServer } from './server/api';
 var cron = require('node-cron');
 
 export const client = new SapphireClient({
@@ -49,3 +50,4 @@ const main = async () => {
 };
 
 main();
+startApiServer(CONFIG.api_port);

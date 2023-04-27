@@ -37,12 +37,5 @@ export const configSchema = z.object({
 			timezone: z.string(),
 			cron: z.string()
 		})
-	}),
-	database: z.object({
-		host: z.string().ip(),
-		port: z.number(),
-		user: z.string(),
-		password: z.string(),
-		name: z.string()
 	})
 });

@@ -11,6 +11,7 @@
 	"accept_channel": "",
 	"accept_message": "",
 	"member_role": "",
+	"admin_role": "",
 	"owners": [""],
 	"applications": {
 		"timeout": 5,
@@ -33,12 +34,5 @@
 			"timezone": "America/New_York",
 			"cron": "0 1 * * *"
 		}
-	},
-	"database": {
-		"host": "localhost",
-		"port": 3306,
-		"user": "root",
-		"password": "password",
-		"name": "database"
 	}
 }
