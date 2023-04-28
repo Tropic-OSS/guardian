@@ -12,8 +12,7 @@ import { io } from '../server/socket';
 
 @ApplyOptions<Command.Options>({
 	description: 'Accept Member',
-	requiredUserPermissions: 'Administrator',
-	options: []
+	requiredUserPermissions: 'Administrator'
 })
 export class UserCommand extends Command {
 	// Register slash and context menu command
