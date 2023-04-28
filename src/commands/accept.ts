@@ -93,37 +93,20 @@ export class UserCommand extends Command {
 			});
 
 		await db
-			.insertInto('member')
-			.values({
-				discord_id: member.id,
-				mojang_id: addDashes(mojangUser.id),
-				grace_period_end: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
-			})
+			.selectFrom('member')
+			.where('discord_id', '=', member.id)
 			.execute()
+			.then(async (rows) => {
+				if (rows.length > 0) {
+					await interaction.reply({ content: 'Member already accepted', ephemeral: true });
+					return;
+				}
+			})
 			.catch((error) => {
 				client.logger.error(error);
 			});
 
-		await db
-			.updateTable('interview')
-			.set({ status: 'ACCEPTED' })
-			.where('thread_id', '=', interaction.channelId)
-			.execute()
-			.catch((error) => {
-				client.logger.error(error);
-			});
-
-		await db
-			.insertInto('application_meta')
-			.values({
-				id: application.id,
-				admin_id: interaction.member!.user.id,
-				response: 'Member Accepted'
-			})
-			.execute()
-			.catch((error) => {
-				client.logger.error(error);
-			});
+		// Change to transaction
 
 		await member.roles.remove(interviewRole).catch((error) => {
 			client.logger.error(error);
