@@ -8,43 +8,26 @@ datasource db {
 }
 
 model Application {
-  application_id      String             @id 
-  user_id             String             
+  application_id      String  @id
+  member_id           String
   application_status  String
   application_answers String
-  Interview           Interview[]
-  Application_Meta    Application_Meta[]
-}
-
-model Application_Meta {
-  id           String      @id 
-  admin_id     String      
-  response     String
-  deleted      Boolean     @default(false)
-  responded_at DateTime    @default(now())
-  application  Application @relation(fields: [id], references: [application_id])
-}
-
-model Interview {
-  interview_id     String              @id
-  user_id          String
-  application_id   String
-  interview_status String
-  interview_date   DateTime?
-  application      Application?     @relation(fields: [application_id], references: [application_id])
+  interview_thread_id String?
+  interview_status    String?
+  member              Member  @relation(fields: [member_id], references: [discord_id])
 }
 
 model Member {
-  member_id     String       @id
-  user_id       String       @unique
-  last_seen     DateTime?
-  grace_period  DateTime?
-  member_status String
-  sessions      Session[]
+  mojang_id    String        @id
+  discord_id   String        @unique
+  status       String
+  grace_period DateTime
+  applications Application[]
+  sessions     Session[]
 }
 
 model Server {
-  server_id    String       @id @default(uuid())
+  server_id    String    @id @default(uuid())
   server_name  String
   server_token String
   Session      Session[]
@@ -56,6 +39,6 @@ model Session {
   server_id  String
   start_time DateTime  @default(now())
   end_time   DateTime?
-  member     Member    @relation(fields: [member_id], references: [member_id])
+  member     Member    @relation(fields: [member_id], references: [mojang_id])
   server     Server    @relation(fields: [server_id], references: [server_id])
 }
