@@ -8,8 +8,7 @@ import { logger } from '../lib/logger';
 
 @ApplyOptions<Command.Options>({
 	description: 'Deny Member',
-	requiredUserPermissions: 'Administrator',
-	options: []
+	requiredUserPermissions: 'Administrator'
 })
 export class UserCommand extends Command {
 	// Register slash and context menu command
