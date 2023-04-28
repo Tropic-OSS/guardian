@@ -1,4 +1,3 @@
-import { client } from '..';
 import { Command } from '@sapphire/framework';
 import { send } from '@sapphire/plugin-editable-commands';
 import { EmbedBuilder, Message, TextChannel } from 'discord.js';
@@ -44,92 +43,97 @@ export class UserCommand extends Command {
 
 		const { value } = interaction.options.get('username', true);
 
-		const [member, mojangUser] = await Promise.all([
-			await interaction.guild!.members.fetch(memberApplication.application_id).catch(async (err) => {
-				logger.error(err.name, err.message);
-				await interaction.reply({
-					content: 'There was an error trying to fetch the user, if the problem persists go to your error logs and file a report on github',
-					ephemeral: true
-				});
-			}),
-			await getMojangProfile(value!.toString()).catch(async (err) => {
+		try {
+			const [member, mojangUser] = await Promise.all([
+				interaction.guild!.members.fetch(memberApplication.application_id),
+				getMojangProfile(value!.toString())
+			]);
+
+			if (!member || !mojangUser) {
+				return await interaction.reply({ content: 'Member or Mojang User could not be found', ephemeral: true });
+			}
+
+			const memberRole = await interaction.guild!.roles.fetch(CONFIG.member_role).catch(async (err) => {
 				logger.error(err);
 				await interaction.reply({
 					content:
-						'There was an error trying to get the minecraft profile, if the problem persists go to your error logs and file a report on github',
+						'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
 					ephemeral: true
 				});
-			})
-		]);
-
-		if (!member || !mojangUser) {
-			return await interaction.reply({ content: 'Member or Mojang User could not be found', ephemeral: true });
-		}
-
-		const memberRole = await interaction.guild!.roles.fetch(CONFIG.member_role).catch(async (err) => {
-			logger.error(err);
-			await interaction.reply({
-				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
-				ephemeral: true
 			});
-		});
-		const interviewRole = await interaction.guild!.roles.fetch(CONFIG.interviews.role).catch(async (err) => {
-			logger.error(err);
-			await interaction.reply({
-				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
-				ephemeral: true
-			});
-		});
-
-		const acceptChannel = (await interaction.guild!.channels.fetch(CONFIG.accept_channel).catch(async (err) => {
-			logger.error(err);
-			await interaction.reply({
-				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
-				ephemeral: true
-			});
-		})) as TextChannel;
-
-		if (!memberRole || !interviewRole || !acceptChannel)
-			return await interaction
-				.reply({
+			const interviewRole = await interaction.guild!.roles.fetch(CONFIG.interviews.role).catch(async (err) => {
+				logger.error(err);
+				await interaction.reply({
 					content:
 						'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
 					ephemeral: true
-				})
+				});
+			});
+
+			const acceptChannel = (await interaction.guild!.channels.fetch(CONFIG.accept_channel).catch(async (err) => {
+				logger.error(err);
+				await interaction.reply({
+					content:
+						'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+					ephemeral: true
+				});
+			})) as TextChannel;
+
+			if (!memberRole || !interviewRole || !acceptChannel)
+				return await interaction
+					.reply({
+						content:
+							'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+						ephemeral: true
+					})
+					.catch(async (err) => {
+						logger.error(err);
+					});
+
+			await prisma
+				.$transaction([
+					prisma.member.upsert({
+						where: {
+							discord_id: member.id
+						},
+						update: {
+							mojang_id: mojangUser.id,
+							discord_id: member.id,
+							grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days),
+							status: MEMBER_STATUS.ACTIVE
+						},
+						create: {
+							mojang_id: mojangUser.id,
+							status: MEMBER_STATUS.ACTIVE,
+							discord_id: member.id,
+							grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
+						}
+					}),
+					prisma.application.update({
+						where: {
+							application_id: memberApplication.application_id
+						},
+						data: {
+							application_status: APPLICATION_STATUS.ACCEPTED,
+							interview_status: INTERVIEW_STATUS.ACCEPTED
+						}
+					})
+				])
 				.catch(async (err) => {
 					logger.error(err);
+					return await interaction.reply({
+						content:
+							'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+						ephemeral: true
+					});
 				});
 
-		await prisma
-			.$transaction([
-				prisma.member.upsert({
-					where: {
-						discord_id: member.id
-					},
-					update: {
-						mojang_id: mojangUser.id,
-						discord_id: member.id,
-						grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days),
-						status: MEMBER_STATUS.ACTIVE
-					},
-					create: {
-						mojang_id: mojangUser.id,
-						status: MEMBER_STATUS.ACTIVE,
-						discord_id: member.id,
-						grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
-					}
-				}),
-				prisma.application.update({
-					where: {
-						application_id: memberApplication.application_id
-					},
-					data: {
-						application_status: APPLICATION_STATUS.ACCEPTED,
-						interview_status: INTERVIEW_STATUS.ACCEPTED
-					}
-				})
-			])
-			.catch(async (err) => {
+			await Promise.all([
+				member.roles.add(memberRole),
+				member.roles.remove(interviewRole),
+				member.setNickname(member.displayName + `(${mojangUser.name})`),
+				acceptChannel.send(CONFIG.accept_message.replace('{member}', member.toString()))
+			]).catch(async (err) => {
 				logger.error(err);
 				return await interaction.reply({
 					content:
@@ -138,41 +142,32 @@ export class UserCommand extends Command {
 				});
 			});
 
-		await Promise.all([
-			member.roles.add(memberRole),
-			member.roles.remove(interviewRole),
-			member.setNickname(member.displayName + `(${mojangUser.name})`),
-			acceptChannel.send(CONFIG.accept_message.replace('{member}', member.toString()))
-		]).catch(async (err) => {
-			logger.error(err);
-			return await interaction.reply({
-				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
-				ephemeral: true
+			const event = {
+				id: addDashes(mojangUser.id),
+				name: mojangUser.name
+			};
+
+			io.emit('add', event);
+
+			const embed = new EmbedBuilder()
+				.setColor('#0099ff')
+				.setTitle(`Link Created and Member Accepted`)
+				.setAuthor({
+					name: 'Guardian',
+					iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
+				})
+				.addFields({ name: 'Discord Name', value: `${member}`, inline: true }, { name: 'IGN', value: `${mojangUser.name}`, inline: true })
+				.setImage(`https://crafatar.com/renders/body/${mojangUser.id}?scale=3`)
+				.setTimestamp();
+
+			return await interaction.reply({ embeds: [embed] }).catch(async (err) => {
+				logger.error(err);
+				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
 			});
-		});
-
-		const event = {
-			id: addDashes(mojangUser.id),
-			name: mojangUser.name
-		};
-
-		io.emit('add', event);
-
-		const embed = new EmbedBuilder()
-			.setColor('#0099ff')
-			.setTitle(`Link Created and Member Accepted`)
-			.setAuthor({
-				name: 'Guardian',
-				iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
-			})
-			.addFields({ name: 'Discord Name', value: `${member}`, inline: true }, { name: 'IGN', value: `${mojangUser.name}`, inline: true })
-			.setImage(`https://crafatar.com/renders/body/${mojangUser.id}?scale=3`)
-			.setTimestamp();
-
-		return await interaction.reply({ embeds: [embed] }).catch(async (err) => {
-			logger.error(err);
-			await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-		});
+		} catch (error) {
+			logger.error(error);
+			return await interaction.reply({ content: 'Member or Mojang User could not be found', ephemeral: true });
+		}
 	}
 }
 
