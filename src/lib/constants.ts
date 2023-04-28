@@ -36,7 +36,8 @@ export const MEMBER_STATUS = {
 export const APPLICATION_STATUS = {
 	ACCEPTED: 'ACCEPTED',
 	DENIED: 'DENIED',
-	PENDING: 'PENDING'
+	PENDING: 'PENDING',
+	DELETED: 'DELETED'
 } as const;
 
 export const INTERVIEW_STATUS = {

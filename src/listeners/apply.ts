@@ -2,12 +2,11 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ButtonInteraction, EmbedBuilder, Events, GuildMember, Interaction, Message, StageChannel, TextChannel } from 'discord.js';
 import { client } from '..';
-import { timeoutCache } from '../database/db';
 import { APPLICATION_ROW, APPLICATION_STATUS, BUTTON_IDS } from '../lib/constants';
 import { CONFIG } from '../lib/setup';
 import type { Responses } from '../lib/types';
 import { logger } from '../lib/logger';
-import { prisma } from '../server/db';
+import {timeoutCache, prisma } from '../server/db';
 const wait = require('node:timers/promises').setTimeout;
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Member Apply' })

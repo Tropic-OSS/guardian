@@ -12,9 +12,9 @@ import {
 	TextInputStyle,
 	type Interaction
 } from 'discord.js';
-import { client } from '..';
-import { db } from '../database/db';
-import { APPLICATION_ROW, BUTTON_IDS, DISABLED_APPLICATION_ROW, MODAL_IDS } from '../lib/constants';
+import { APPLICATION_ROW, APPLICATION_STATUS, BUTTON_IDS, DISABLED_APPLICATION_ROW, MODAL_IDS } from '../lib/constants';
+import { prisma } from '../server/db';
+import { logger } from '../lib/logger';
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Deny Member' })
 export class DenyButtonEvent extends Listener {
@@ -22,17 +22,18 @@ export class DenyButtonEvent extends Listener {
 		if (!interaction.isButton() || interaction.member?.user.bot || interaction.customId !== BUTTON_IDS.DENY) return;
 
 		try {
-			const application = await db
-				.selectFrom('application')
-				.select(['id', 'applicant_id'])
-				.where('id', '=', interaction.message.id)
-				.executeTakeFirst();
+
+			const application = await prisma.application.findUnique({
+				where: {
+					application_id:interaction.message.id
+				},
+			})
 
 			if (!application) return interaction.reply({ content: 'Could not find application in database', ephemeral: true });
 
 			const modal = new ModalBuilder().setCustomId(MODAL_IDS.REASON).setTitle('Guardian');
 
-			const member = await interaction.guild?.members.fetch(application.applicant_id);
+			const member = await interaction.guild?.members.fetch(application.member_id);
 
 			if (!member) return interaction.reply('Member could not be found. Are they still in the server ?');
 
@@ -74,25 +75,24 @@ export class DenyButtonEvent extends Listener {
 
 			const reason = submitted.fields.getTextInputValue(MODAL_IDS.ADMIN_REASON);
 
-			return this.denyApplicant(interaction, reason, application.id, application.applicant_id);
+			return this.denyApplicant(interaction, reason, application.application_id, application.member_id);
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return interaction.reply({ content: 'An error occured while fetching the application', ephemeral: true });
 		}
 	}
 
 	async denyApplicant(interaction: ButtonInteraction, response: string, applicationId: string, applicantId: string) {
 		try {
-			await db
-				.insertInto('application_meta')
-				.values({
-					id: applicationId,
-					response: response,
-					admin_id: interaction.user.id
-				})
-				.execute();
-
-			await db.updateTable('application').set({ status: 'DENIED' }).where('id', '=', applicationId).execute();
+			
+			await prisma.application.update({
+				where: {
+					application_id: applicationId
+				},
+				data :{
+					application_status: APPLICATION_STATUS.DENIED
+				}
+			})
 
 			const newEmbed = EmbedBuilder.from(interaction.message.embeds[0])
 				.setColor('Red')
@@ -120,7 +120,7 @@ export class DenyButtonEvent extends Listener {
 
 			return await applicant.send({ embeds: [embed] });
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return interaction.reply({ content: 'An error occured while denying the application', ephemeral: true });
 		}
 	}

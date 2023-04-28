@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import Keyv from 'keyv';
+
+export const timeoutCache = new Keyv();
 
 const globalForPrisma = globalThis as unknown as {
 	prisma: PrismaClient | undefined;
