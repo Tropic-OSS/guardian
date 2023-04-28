@@ -72,19 +72,12 @@ export async function purge() {
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true },
 						{ name: 'Grace Period End', value: `${row.grace_period.toDateString()}`, inline: true }
 					])
+					.setImage("https://tenor.com/view/soon-hamster-gif-4508050")
 					.setTimestamp();
+					
 				await console.send({ embeds: [embed] });
 				return logger.info(`Skipping member ${row.discord_id} as they are in the grace period`);
 			}
-				
-			await prisma.member.update({
-				where:{
-					mojang_id: row.mojang_id
-				},
-				data: {
-					status: MEMBER_STATUS.INACTIVE
-				}
-			})
 
 			const member = await guild.members.fetch(row.discord_id).catch(async () => {
 				logger.warn(`Failed to fetch member ${row.discord_id}`);
@@ -100,6 +93,7 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${row.discord_id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
+					.setImage("https://media.tenor.com/nP0VTQlKjNwAAAAC/velma-glasses.gif")
 					.setTimestamp();
 
 				 await console.send({ embeds: [embed] });
@@ -121,6 +115,7 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
+					.setImage("https://media.tenor.com/NKVsLIc6qwAAAAAC/vacation-vacation-time.gif")
 					.setTimestamp();
 
 				await console.send({ embeds: [embed] });
@@ -140,13 +135,23 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
+					.setImage("https://media.tenor.com/EtSlxvVMqFgAAAAM/cat-annoyed.gif")
 					.setTimestamp();
 
 				await console.send({ embeds: [embed] });
 				return;
 			});
 
-			await member.kick('Inactive').catch(async () => {
+			await member.kick('Inactive').then(async () =>{
+				await prisma.member.update({
+					where:{
+						mojang_id: row.mojang_id
+					},
+					data: {
+						status: MEMBER_STATUS.INACTIVE
+					}
+				})
+			}).catch(async () => {
 				logger.warn(`Failed to kick member ${member.id}`);
 
 				const embed = new EmbedBuilder()
@@ -160,6 +165,7 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
+					.setImage("https://media.tenor.com/hqze9KtFA0sAAAAC/blocked-kid.gif")
 					.setTimestamp();
 
 				await console.send({ embeds: [embed] });
@@ -179,6 +185,7 @@ export async function purge() {
 					{ name: 'Member Name', value: `${member.displayName}`, inline: true },
 					{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 				])
+				.setImage("https://media.tenor.com/5JmSgyYNVO0AAAAC/asdf-movie.gif")
 				.setTimestamp();
 
 			return await console.send({ embeds: [embed] });
