@@ -4,8 +4,10 @@ import { send } from '@sapphire/plugin-editable-commands';
 import { EmbedBuilder, Message, TextChannel } from 'discord.js';
 import { ApplyOptions, RequiresGuildContext } from '@sapphire/decorators';
 import { z } from 'zod';
-import { db } from '../database/db';
+import { prisma } from '../server/db';
+import { logger } from '../lib/logger';
 import { CONFIG } from '../lib/setup';
+import { APPLICATION_STATUS, INTERVIEW_STATUS, MEMBER_STATUS } from '../lib/constants';
 import { io } from '../server/socket';
 
 @ApplyOptions<Command.Options>({
@@ -28,105 +30,134 @@ export class UserCommand extends Command {
 	@RequiresGuildContext((message: Message) => send(message, 'This command can only be used in servers'))
 	public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
 		if (interaction.member?.user.bot) return interaction.reply('Bots cannot accept members');
-		const application = await this.getApplicant(interaction.channelId!).catch(async (err) => {
-			client.logger.error(err);
-			await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
+
+		const memberApplication = await prisma.application.findFirst({
+			where: {
+				interview_thread_id: interaction.channel!.id
+			}
 		});
 
-		if (!application)
-			return await interaction.reply({ content: 'No application found', ephemeral: true }).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
+		if (!memberApplication) {
+			return await interaction.reply({ content: 'Application could not be found', ephemeral: true }).catch(async (err) => {
+				logger.error(err);
 			});
+		}
 
 		const { value } = interaction.options.get('username', true);
 
-		if (!value)
-			return await interaction.reply({ content: 'No username provided', ephemeral: true }).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-			});
-
 		const [member, mojangUser] = await Promise.all([
-			await interaction.guild?.members.fetch(application.applicant_id).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
+			await interaction.guild!.members.fetch(memberApplication.application_id).catch(async (err) => {
+				logger.error(err.name, err.message);
+				await interaction.reply({
+					content: 'There was an error trying to fetch the user, if the problem persists go to your error logs and file a report on github',
+					ephemeral: true
+				});
 			}),
-			await getMojangProfile(value.toString()).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
+			await getMojangProfile(value!.toString()).catch(async (err) => {
+				logger.error(err);
+				await interaction.reply({
+					content:
+						'There was an error trying to get the minecraft profile, if the problem persists go to your error logs and file a report on github',
+					ephemeral: true
+				});
 			})
 		]);
 
-		if (!member)
-			return await interaction.reply({ content: 'Member not found', ephemeral: true }).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-			});
+		if (!member || !mojangUser) {
+			return await interaction.reply({ content: 'Member or Mojang User could not be found', ephemeral: true });
+		}
 
-		if (!mojangUser)
-			return interaction.reply({ content: 'Mojang user not found', ephemeral: true }).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
+		const memberRole = await interaction.guild!.roles.fetch(CONFIG.member_role).catch(async (err) => {
+			logger.error(err);
+			await interaction.reply({
+				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+				ephemeral: true
 			});
+		});
+		const interviewRole = await interaction.guild!.roles.fetch(CONFIG.interviews.role).catch(async (err) => {
+			logger.error(err);
+			await interaction.reply({
+				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+				ephemeral: true
+			});
+		});
 
-		const [memberRole, interviewRole, acceptChannel] = await Promise.all([
-			await interaction.guild?.roles.fetch(CONFIG.member_role).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-			}),
-			await interaction.guild?.roles.fetch(CONFIG.interviews.role).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-			}),
-			(await interaction.guild?.channels.fetch(CONFIG.accept_channel).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-				return;
-			})) as TextChannel
-		]);
+		const acceptChannel = (await interaction.guild!.channels.fetch(CONFIG.accept_channel).catch(async (err) => {
+			logger.error(err);
+			await interaction.reply({
+				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+				ephemeral: true
+			});
+		})) as TextChannel;
 
 		if (!memberRole || !interviewRole || !acceptChannel)
-			return interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true }).catch(async (err) => {
-				client.logger.error(err);
-				await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
+			return await interaction
+				.reply({
+					content:
+						'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+					ephemeral: true
+				})
+				.catch(async (err) => {
+					logger.error(err);
+				});
+
+		await prisma
+			.$transaction([
+				prisma.member.upsert({
+					where: {
+						discord_id: member.id
+					},
+					update: {
+						mojang_id: mojangUser.id,
+						discord_id: member.id,
+						grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days),
+						status: MEMBER_STATUS.ACTIVE
+					},
+					create: {
+						mojang_id: mojangUser.id,
+						status: MEMBER_STATUS.ACTIVE,
+						discord_id: member.id,
+						grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
+					}
+				}),
+				prisma.application.update({
+					where: {
+						application_id: memberApplication.application_id
+					},
+					data: {
+						application_status: APPLICATION_STATUS.ACCEPTED,
+						interview_status: INTERVIEW_STATUS.ACCEPTED
+					}
+				})
+			])
+			.catch(async (err) => {
+				logger.error(err);
+				return await interaction.reply({
+					content:
+						'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+					ephemeral: true
+				});
 			});
 
-		await db
-			.selectFrom('member')
-			.where('discord_id', '=', member.id)
-			.execute()
-			.then(async (rows) => {
-				if (rows.length > 0) {
-					await interaction.reply({ content: 'Member already accepted', ephemeral: true });
-					return;
-				}
-			})
-			.catch((error) => {
-				client.logger.error(error);
+		await Promise.all([
+			member.roles.add(memberRole),
+			member.roles.remove(interviewRole),
+			member.setNickname(member.displayName + `(${mojangUser.name})`),
+			acceptChannel.send(CONFIG.accept_message.replace('{member}', member.toString()))
+		]).catch(async (err) => {
+			logger.error(err);
+			return await interaction.reply({
+				content: 'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
+				ephemeral: true
 			});
-
-		// Change to transaction
-
-		await member.roles.remove(interviewRole).catch((error) => {
-			client.logger.error(error);
-			return interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
 		});
 
-		await member.roles.add(memberRole).catch((error) => {
-			client.logger.error(error);
-			return interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
-		});
+		const event = {
+			id: addDashes(mojangUser.id),
+			name: mojangUser.name
+		};
 
-		await member.setNickname(member.displayName + `(${mojangUser.name})`).catch((error) => {
-			client.logger.error(error);
-			return interaction.reply({ content: 'Something went wrong trying to change nickname', ephemeral: true });
-		});
-
-		await acceptChannel.send(CONFIG.accept_message.replace('{member}', member.toString())).catch((error) => {
-			client.logger.error(error);
-			return interaction.reply({ content: 'Something went wrong trying to send message', ephemeral: true });
-		});
+		io.emit('add', event);
 
 		const embed = new EmbedBuilder()
 			.setColor('#0099ff')
@@ -139,31 +170,10 @@ export class UserCommand extends Command {
 			.setImage(`https://crafatar.com/renders/body/${mojangUser.id}?scale=3`)
 			.setTimestamp();
 
-		const event = {
-			id: addDashes(mojangUser.id),
-			name: mojangUser.name
-		};
-
-		io.emit('add', event);
-
 		return await interaction.reply({ embeds: [embed] }).catch(async (err) => {
 			client.logger.error(err);
 			await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
 		});
-	}
-
-	private async getApplicant(threadId: string) {
-		const applicant = await db
-			.selectFrom('application')
-			.innerJoin('interview', 'interview.application_id', 'id')
-			.select(['applicant_id', 'id'])
-			.where('thread_id', '=', threadId)
-			.executeTakeFirst()
-			.catch(async (err) => {
-				client.logger.error(err);
-				return;
-			});
-		return applicant;
 	}
 }
 
