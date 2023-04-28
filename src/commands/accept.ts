@@ -170,7 +170,7 @@ export class UserCommand extends Command {
 			.setTimestamp();
 
 		return await interaction.reply({ embeds: [embed] }).catch(async (err) => {
-			client.logger.error(err);
+			logger.error(err);
 			await interaction.reply({ content: 'Something went wrong trying to accept member', ephemeral: true });
 		});
 	}
@@ -193,7 +193,7 @@ async function getMojangProfile(username: string) {
 
 		return data;
 	} catch (error) {
-		client.logger.error(error);
+		logger.error(error);
 		return null;
 	}
 }
