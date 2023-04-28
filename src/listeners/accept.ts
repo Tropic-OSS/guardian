@@ -1,10 +1,10 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ButtonInteraction, ChannelType, EmbedBuilder, Events, GuildMember, Interaction, TextChannel } from 'discord.js';
-import { db } from '../database/db';
-import { ACCEPTED_MEMBER_ROW, BUTTON_IDS } from '../lib/constants';
+import { ACCEPTED_MEMBER_ROW, APPLICATION_STATUS, BUTTON_IDS, INTERVIEW_STATUS } from '../lib/constants';
 import { CONFIG } from '../lib/setup';
-import { client } from '..';
+import { logger } from '../lib/logger';
+import { prisma } from '../server/db';
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Accept Member' })
 export class AcceptButtonEvent extends Listener {
@@ -12,20 +12,24 @@ export class AcceptButtonEvent extends Listener {
 		if (!interaction.isButton() || interaction.member?.user.bot || interaction.customId !== BUTTON_IDS.ACCEPT) return;
 
 		try {
-			const data = await db.selectFrom('application').select('applicant_id').where('id', '=', interaction.message.id).executeTakeFirst();
+			const data = await prisma.application.findUnique({ where: { application_id: interaction.message.id } });
 
 			if (!data) return interaction.reply({ content: 'Could not find application in database', ephemeral: true });
 
-			const applicant = await interaction.guild?.members.fetch(data.applicant_id);
+			const applicant = await interaction.guild?.members.fetch(data.member_id);
 
 			if (!applicant) return interaction.reply({ content: 'Could not find applicant in guild', ephemeral: true });
 
 			return this.createInterview(applicant, interaction);
 		} catch (error) {
-			client.logger.error(error);
-			return interaction.reply({ content: 'Something went wrong', ephemeral: true });
+			logger.error(error);
+			return interaction.reply({
+				content: 'Something went wrong, if the problem continues please report the problem including the error logs on Github',
+				ephemeral: true
+			});
 		}
 	}
+
 	private async createInterview(applicant: GuildMember, interaction: ButtonInteraction) {
 		try {
 			const settings = {
@@ -42,10 +46,7 @@ export class AcceptButtonEvent extends Listener {
 
 			await applicant.roles.add(role!);
 
-			await applicant.send(`You have been accepted for an interview in ${channel}!`).catch(async (error) => {
-				client.logger.error(error as Error);
-				await interaction.reply({ content: 'Could not send message to applicant', ephemeral: true });
-			});
+			await applicant.send(`You have been accepted for an interview in ${channel}!`);
 
 			const thread = await channel.threads.create({
 				name: `${applicant.user.tag}`,
@@ -53,16 +54,14 @@ export class AcceptButtonEvent extends Listener {
 				type: ChannelType.PrivateThread
 			});
 
-			await db
-				.insertInto('interview')
-				.values({
-					thread_id: thread.id,
-					application_id: interaction.message.id,
-					status: 'ONGOING'
-				})
-				.execute();
-
-			await db.updateTable('application').set({ status: 'ACCEPTED' }).where('id', '=', interaction.message.id).execute();
+			await prisma.application.update({
+				where: { application_id: interaction.message.id },
+				data: {
+					application_status: APPLICATION_STATUS.ACCEPTED,
+					interview_thread_id: thread.id,
+					interview_status: INTERVIEW_STATUS.SCHEDULED
+				}
+			});
 
 			await thread.members.add(applicant);
 
@@ -79,13 +78,10 @@ export class AcceptButtonEvent extends Listener {
 				.setTimestamp()
 				.setFooter({ text: `Member accepted by ${interaction.member!.user.username}` });
 
-			return await interaction.update({ embeds: [newEmbed], components: [ACCEPTED_MEMBER_ROW] }).catch((error) => {
-				client.logger.error(error);
-				return interaction.reply({ content: 'Something went wrong trying to accepting member', ephemeral: true });
-			});
+			return await interaction.update({ embeds: [newEmbed], components: [ACCEPTED_MEMBER_ROW] });
 		} catch (error) {
-			client.logger.error(error as Error);
-			return interaction.reply({ content: 'Could not create interview', ephemeral: true });
+			logger.error(error);
+			return await interaction.reply({ content: 'Could not create interview', ephemeral: true });
 		}
 	}
 }

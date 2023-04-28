@@ -2,44 +2,48 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ButtonInteraction, EmbedBuilder, Events, GuildMember, Interaction, Message, StageChannel, TextChannel } from 'discord.js';
 import { client } from '..';
-import { db, timeoutCache } from '../database/db';
-import { APPLICATION_ROW, BUTTON_IDS } from '../lib/constants';
+import { timeoutCache } from '../database/db';
+import { APPLICATION_ROW, APPLICATION_STATUS, BUTTON_IDS } from '../lib/constants';
 import { CONFIG } from '../lib/setup';
 import type { Responses } from '../lib/types';
+import { logger } from '../lib/logger';
+import { prisma } from '../server/db';
 const wait = require('node:timers/promises').setTimeout;
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Member Apply' })
 export class ApplyButtonEvent extends Listener {
 	public async run(interaction: Interaction) {
-		if (!interaction.isButton() || interaction.member?.user.bot || interaction.customId !== BUTTON_IDS.APPLY) return;
+		try {
+			if (!interaction.isButton() || interaction.member!.user.bot || interaction.customId !== BUTTON_IDS.APPLY) return;
 
-		const checkTimeout = await timeoutCache.get(interaction.user.id);
+			const checkTimeout = await timeoutCache.get(interaction.user.id);
 
-		const checkApplication = await db.selectFrom('application').selectAll().where('applicant_id', '=', interaction.user.id).executeTakeFirst();
-
-		if (checkApplication && checkApplication.status === 'PENDING') {
-			await interaction.deferReply({ ephemeral: true });
-			await wait(5000);
-			return interaction.editReply({
-				content: 'You already have an application pending, please wait for a staff member to review your application'
+			const application = await prisma.application.findFirst({
+				where: {
+					member_id: interaction.user.id
+				}
 			});
-		}
 
-		if (!checkTimeout) {
-			try {
-				await timeoutCache.set(interaction.user.id, true, CONFIG.applications.timeout * 60000);
-
-				return this.sendQuestions(interaction);
-			} catch (error) {
-				client.logger.error(error);
-				return interaction.reply({ content: 'Sorry, something went wrong', ephemeral: true });
+			if (application && application.application_status === APPLICATION_STATUS.PENDING) {
+				await interaction.deferReply({ ephemeral: true });
+				await wait(5000);
+				return interaction.editReply({
+					content: 'You already have an application pending, please wait for a staff member to review your application'
+				});
 			}
-		} else {
-			await interaction.deferReply({ ephemeral: true });
-			await wait(5000);
-			interaction.editReply({
-				content: `Please wait for ${CONFIG.applications.timeout} minutes after your application to apply again thank you`
-			});
+
+			if (checkTimeout) {
+				await interaction.deferReply({ ephemeral: true });
+				await wait(5000);
+				interaction.editReply({
+					content: `Please wait for ${CONFIG.applications.timeout} minutes after your application to apply again thank you`
+				});
+			}
+			await timeoutCache.set(interaction.user.id, true, CONFIG.applications.timeout * 60000);
+
+			return this.sendQuestions(interaction);
+		} catch (error) {
+			logger.error(error);
 		}
 	}
 
@@ -47,6 +51,7 @@ export class ApplyButtonEvent extends Listener {
 		const member = interaction.member as GuildMember;
 
 		const questions = CONFIG.applications.questions;
+
 		await interaction.reply({ content: 'Check your direct messages', ephemeral: true }).catch((error) => {
 			client.logger.error(error);
 			return interaction.reply({
@@ -121,14 +126,13 @@ export class ApplyButtonEvent extends Listener {
 			components: [APPLICATION_ROW]
 		});
 
-		await db
-			.insertInto('application')
-			.values({
-				id: message.id,
-				applicant_id: member.id,
-				content: JSON.stringify(responses),
-				status: 'PENDING'
-			})
-			.execute();
+		await prisma.application.create({
+			data: {
+				application_id: message.id,
+				member_id: member.id,
+				application_status: APPLICATION_STATUS.PENDING,
+				application_answers: JSON.stringify(responses)
+			}
+		});
 	}
 }
