@@ -9,18 +9,18 @@ import { MEMBER_STATUS } from './constants';
 export async function purge() {
 	try {
 		const cutoffDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days ago
-		
+
 		const inactiveMembers = await prisma.member.findMany({
 			where: {
-			  sessions: {
-				some: {
-				  end_time: {
-					lt: cutoffDate,
-				  },
-				},
-			  },
-			},
-		  });
+				sessions: {
+					some: {
+						end_time: {
+							lt: cutoffDate
+						}
+					}
+				}
+			}
+		});
 
 		logger.info(`Purging ${inactiveMembers.length} sessions...`);
 
@@ -39,7 +39,7 @@ export async function purge() {
 					iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
 				})
 				.setTitle('No members to purge')
-				.setImage("https://media2.giphy.com/media/7SF5scGB2AFrgsXP63/giphy.gif")
+				.setImage('https://media2.giphy.com/media/7SF5scGB2AFrgsXP63/giphy.gif')
 				.setTimestamp();
 			await console.send({ embeds: [embed] });
 		} else {
@@ -51,7 +51,7 @@ export async function purge() {
 				})
 				.setTitle('Purging Members')
 				.addFields([{ name: 'Count', value: `${inactiveMembers.length}`, inline: true }])
-				.setImage("https://media.tenor.com/jg0-zHyA_8oAAAAi/winnie-the-pooh-pooh-bear.gif")
+				.setImage('https://media.tenor.com/jg0-zHyA_8oAAAAi/winnie-the-pooh-pooh-bear.gif')
 				.setTimestamp();
 			await console.send({ embeds: [embed] });
 		}
@@ -72,9 +72,9 @@ export async function purge() {
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true },
 						{ name: 'Grace Period End', value: `${row.grace_period.toDateString()}`, inline: true }
 					])
-					.setImage("https://tenor.com/view/soon-hamster-gif-4508050")
+					.setImage('https://tenor.com/view/soon-hamster-gif-4508050')
 					.setTimestamp();
-					
+
 				await console.send({ embeds: [embed] });
 				return logger.info(`Skipping member ${row.discord_id} as they are in the grace period`);
 			}
@@ -93,11 +93,11 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${row.discord_id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
-					.setImage("https://media.tenor.com/nP0VTQlKjNwAAAAC/velma-glasses.gif")
+					.setImage('https://media.tenor.com/nP0VTQlKjNwAAAAC/velma-glasses.gif')
 					.setTimestamp();
 
-				 await console.send({ embeds: [embed] });
-				 return
+				await console.send({ embeds: [embed] });
+				return;
 			});
 
 			if (!member) return;
@@ -115,7 +115,7 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
-					.setImage("https://media.tenor.com/NKVsLIc6qwAAAAAC/vacation-vacation-time.gif")
+					.setImage('https://media.tenor.com/NKVsLIc6qwAAAAAC/vacation-vacation-time.gif')
 					.setTimestamp();
 
 				await console.send({ embeds: [embed] });
@@ -135,42 +135,45 @@ export async function purge() {
 						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
 						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 					])
-					.setImage("https://media.tenor.com/EtSlxvVMqFgAAAAM/cat-annoyed.gif")
+					.setImage('https://media.tenor.com/EtSlxvVMqFgAAAAM/cat-annoyed.gif')
 					.setTimestamp();
 
 				await console.send({ embeds: [embed] });
 				return;
 			});
 
-			await member.kick('Inactive').then(async () =>{
-				await prisma.member.update({
-					where:{
-						mojang_id: row.mojang_id
-					},
-					data: {
-						status: MEMBER_STATUS.INACTIVE
-					}
+			await member
+				.kick('Inactive')
+				.then(async () => {
+					await prisma.member.update({
+						where: {
+							mojang_id: row.mojang_id
+						},
+						data: {
+							status: MEMBER_STATUS.INACTIVE
+						}
+					});
 				})
-			}).catch(async () => {
-				logger.warn(`Failed to kick member ${member.id}`);
+				.catch(async () => {
+					logger.warn(`Failed to kick member ${member.id}`);
 
-				const embed = new EmbedBuilder()
-					.setColor('Red')
-					.setAuthor({
-						name: 'Guardian',
-						iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
-					})
-					.setTitle('Failed to Kick Member (Insufficient Permissions)')
-					.addFields([
-						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
-						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
-					])
-					.setImage("https://media.tenor.com/hqze9KtFA0sAAAAC/blocked-kid.gif")
-					.setTimestamp();
+					const embed = new EmbedBuilder()
+						.setColor('Red')
+						.setAuthor({
+							name: 'Guardian',
+							iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
+						})
+						.setTitle('Failed to Kick Member (Insufficient Permissions)')
+						.addFields([
+							{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
+							{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
+						])
+						.setImage('https://media.tenor.com/hqze9KtFA0sAAAAC/blocked-kid.gif')
+						.setTimestamp();
 
-				await console.send({ embeds: [embed] });
-				return;
-			});
+					await console.send({ embeds: [embed] });
+					return;
+				});
 
 			const embed = new EmbedBuilder()
 				.setColor('Blue')
@@ -185,7 +188,7 @@ export async function purge() {
 					{ name: 'Member Name', value: `${member.displayName}`, inline: true },
 					{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
 				])
-				.setImage("https://media.tenor.com/5JmSgyYNVO0AAAAC/asdf-movie.gif")
+				.setImage('https://media.tenor.com/5JmSgyYNVO0AAAAC/asdf-movie.gif')
 				.setTimestamp();
 
 			return await console.send({ embeds: [embed] });
