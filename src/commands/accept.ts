@@ -94,7 +94,7 @@ export class UserCommand extends Command {
 				.$transaction([
 					prisma.member.upsert({
 						where: {
-							discord_id: member.id
+							mojang_id: mojangUser.id
 						},
 						update: {
 							mojang_id: mojangUser.id,

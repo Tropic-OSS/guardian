@@ -17,17 +17,24 @@ export class MemberBan extends Listener {
 		if (!console) return;
 
 		try {
-			const memberProfile = await prisma.member.update({
+			const memberProfile = await prisma.member.findFirst({
 				where: {
 					discord_id: ban.user.id
+				}
+			});
+
+			if (!memberProfile) {
+				return logger.error(`Player ${ban.user.id} not found`);
+			}
+
+			await prisma.member.update({
+				where: {
+					id: memberProfile.id
 				},
 				data: {
 					status: MEMBER_STATUS.BANNED
 				}
 			});
-			if (!memberProfile) {
-				return logger.error(`Player ${ban.user.id} not found`);
-			}
 
 			const mojangProfile = await getMojangProfile(memberProfile.mojang_id);
 
@@ -78,7 +85,7 @@ async function removeMember(member: GuildMember) {
 
 		await prisma.member.update({
 			where: {
-				discord_id: member.id
+				id: memberProfile.id
 			},
 			data: {
 				status: MEMBER_STATUS.LEFT

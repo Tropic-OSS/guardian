@@ -17,8 +17,9 @@ model Application {
 }
 
 model Member {
-  mojang_id    String        @id
-  discord_id   String        @unique
+  id           Int       @id @default(autoincrement())
+  mojang_id    String        @unique @default(uuid())
+  discord_id   String        
   status       String
   grace_period DateTime
   sessions     Session[]
@@ -33,10 +34,10 @@ model Server {
 
 model Session {
   session_id Int       @id @default(autoincrement())
-  member_id  String
+  member_id  Int
   server_id  String
   start_time DateTime  @default(now())
   end_time   DateTime?
-  member     Member    @relation(fields: [member_id], references: [mojang_id])
+  member     Member    @relation(fields: [member_id], references: [id])
   server     Server    @relation(fields: [server_id], references: [server_id])
 }

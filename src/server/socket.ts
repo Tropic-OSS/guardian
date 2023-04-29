@@ -36,7 +36,7 @@ io.use(async (socket, next) => {
 		where: {
 			server_id: auth.server_id
 		}
-	})
+	});
 
 	if (!server) {
 		const err = new Error('not authorized');
@@ -74,10 +74,10 @@ io.on('connection', (socket) => {
 			}
 
 			const member = await prisma.member.findFirst({
-				where:{
+				where: {
 					mojang_id: msg.id
 				}
-			})
+			});
 
 			if (!member) {
 				logger.warn('Member not found');
@@ -100,18 +100,20 @@ io.on('connection', (socket) => {
 				return null;
 			});
 
-			await prisma.member.update({
-				where: {
-					mojang_id: msg.id
-				},
-				data:{
-					status: MEMBER_STATUS.BANNED
-				}
-			}).catch((error) => {
-				logger.error(error);
-				io.emit('success', { success: false, msg: 'Failled to update database with banned player' });
-				return null;
-			});
+			await prisma.member
+				.update({
+					where: {
+						mojang_id: msg.id
+					},
+					data: {
+						status: MEMBER_STATUS.BANNED
+					}
+				})
+				.catch((error) => {
+					logger.error(error);
+					io.emit('success', { success: false, msg: 'Failled to update database with banned player' });
+					return null;
+				});
 
 			return io.emit('success', { success: true, msg: `Banned ${member.mojang_id}` });
 		} catch (error) {
@@ -123,12 +125,11 @@ io.on('connection', (socket) => {
 	socket.on('session-start', async (msg: SessionEvent) => {
 		socket.to(CONFIG.client_id).emit('session-start', msg);
 		try {
-			
 			const member = await prisma.member.findFirst({
-				where:{
+				where: {
 					mojang_id: msg.mojang_id
 				}
-			})
+			});
 
 			if (!member) {
 				logger.warn('Member not found');
@@ -136,12 +137,12 @@ io.on('connection', (socket) => {
 			}
 
 			await prisma.session.create({
-				data:{
-					member_id: msg.mojang_id,
+				data: {
 					server_id: msg.server_id,
+					member_id: member.id
 				}
-			})
-		
+			});
+
 			return io.emit('success', { success: true, msg: `Started session for ${member.mojang_id}` });
 		} catch (error) {
 			logger.error(error);
@@ -157,7 +158,7 @@ io.on('connection', (socket) => {
 				where: {
 					mojang_id: msg.mojang_id
 				}
-			})
+			});
 
 			if (!member) {
 				logger.warn('Member not found');
@@ -166,14 +167,14 @@ io.on('connection', (socket) => {
 
 			const session = await prisma.session.findFirst({
 				where: {
-					member_id: msg.mojang_id,
+					member_id: member.id,
 					server_id: msg.server_id,
 					end_time: null
 				},
-				orderBy:{
+				orderBy: {
 					session_id: 'desc'
 				}
-			})
+			});
 
 			if (!session) return io.emit('success', { success: false, msg: 'Session not found' });
 
@@ -184,7 +185,7 @@ io.on('connection', (socket) => {
 				data: {
 					end_time: new Date()
 				}
-			})
+			});
 
 			return io.emit('success', { success: true, msg: `Ended session for ${member.mojang_id}` });
 		} catch (error) {
@@ -246,7 +247,7 @@ io.on('connection', (socket) => {
 					end_time: null,
 					server_id: socket.data.serverId
 				}
-			})
+			});
 
 			await prisma.session.update({
 				where: {
@@ -255,8 +256,7 @@ io.on('connection', (socket) => {
 				data: {
 					end_time: new Date()
 				}
-			})
-
+			});
 		} catch (error) {
 			logger.error(error);
 			return;
