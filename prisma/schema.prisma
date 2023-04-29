@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  application_id      String  @id
+  member_id           String
+  application_status  String
+  application_answers String
+  interview_thread_id String? @unique
+  interview_status    String?
+}
+
+model Member {
+  id           Int       @id @default(autoincrement())
+  mojang_id    String        @unique @default(uuid())
+  discord_id   String        
+  status       String
+  grace_period DateTime
+  sessions     Session[]
+}
+
+model Server {
+  server_id    String    @id @default(uuid())
+  server_name  String
+  server_token String
+  Session      Session[]
+}
+
+model Session {
+  session_id Int       @id @default(autoincrement())
+  member_id  Int
+  server_id  String
+  start_time DateTime  @default(now())
+  end_time   DateTime?
+  member     Member    @relation(fields: [member_id], references: [id])
+  server     Server    @relation(fields: [server_id], references: [server_id])
+}

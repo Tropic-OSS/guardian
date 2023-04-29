@@ -29,3 +29,7 @@ config.json
 .env.development.local
 .env.test.local
 .env.production.local
+
+dev.db
+database.sqlite3
+

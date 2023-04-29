@@ -9,7 +9,7 @@
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"importHelpers": true,
-		"importsNotUsedAsValues": "error",
+		"verbatimModuleSyntax": false,
 		"incremental": true,
 		"lib": ["esnext"],
 		"module": "CommonJS",

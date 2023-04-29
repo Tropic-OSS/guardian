@@ -1,9 +1,10 @@
 import { EmbedBuilder, TextChannel } from 'discord.js';
-import { sql } from 'kysely';
 import { Server } from 'socket.io';
-import { client } from '..';
-import { db } from '../database/db';
 import { CONFIG } from '../lib/setup';
+import { prisma } from './db';
+import { logger } from '../lib/logger';
+import { client } from '..';
+import { MEMBER_STATUS } from '../lib/constants';
 
 type BanEvent = {
 	id: string;
@@ -31,7 +32,11 @@ export const io = new Server(CONFIG.api_port);
 io.use(async (socket, next) => {
 	const auth = socket.handshake.auth as Auth;
 
-	const server = await db.selectFrom('server').selectAll().where('id', '=', auth.server_id).executeTakeFirst();
+	const server = await prisma.server.findFirst({
+		where: {
+			server_id: auth.server_id
+		}
+	});
 
 	if (!server) {
 		const err = new Error('not authorized');
@@ -39,7 +44,7 @@ io.use(async (socket, next) => {
 		return next(err);
 	}
 
-	if (server.token !== auth.token) {
+	if (server.server_token !== auth.token) {
 		const err = new Error('not authorized');
 		err.message = 'Token is not valid';
 		return next(err);
@@ -51,7 +56,7 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
 	socket.data.serverId = socket.handshake.auth.server_id;
 
-	client.logger.info(`Socket connected: ${socket.id} | ${socket.data.serverId} ✅`);
+	logger.info(`Socket connected: ${socket.id} | ${socket.data.serverId} ✅`);
 
 	socket.join(CONFIG.client_id);
 
@@ -59,53 +64,60 @@ io.on('connection', (socket) => {
 		socket.to(CONFIG.client_id).emit('ban', msg);
 		try {
 			const guild = await client.guilds.fetch(CONFIG.guild_id).catch((error) => {
-				client.logger.error(error);
+				logger.error(error);
 				return null;
 			});
 
 			if (!guild) {
-				client.logger.warn('Guild not found');
+				logger.warn('Guild not found');
 				return io.emit('success', { success: false, msg: 'Guild not found' });
 			}
 
-			const member = await db.selectFrom('member').selectAll().where('mojang_id', '=', msg.id).executeTakeFirst();
+			const member = await prisma.member.findFirst({
+				where: {
+					mojang_id: msg.id
+				}
+			});
 
 			if (!member) {
-				client.logger.warn('Member not found');
+				logger.warn('Member not found');
 				return io.emit('success', { success: false, msg: 'Member not found' });
 			}
 
 			const discordMember = await guild.members.fetch(member.discord_id).catch((error) => {
-				client.logger.error(error);
+				logger.error(error);
 				return null;
 			});
 
 			if (!discordMember) {
-				client.logger.warn('Discord member not found');
+				logger.warn('Discord member not found');
 				return io.emit('success', { success: false, msg: 'Discord member not found' });
 			}
 
 			await discordMember.ban({ reason: msg.reason }).catch((error) => {
-				client.logger.error(error);
+				logger.error(error);
 				io.emit('success', { success: false, msg: 'Discord member could not be banned' });
 				return null;
 			});
 
-			await db
-				.updateTable('member')
-				.set({
-					status: 'BANNED'
+			await prisma.member
+				.update({
+					where: {
+						mojang_id: msg.id
+					},
+					data: {
+						status: MEMBER_STATUS.BANNED
+					}
 				})
-				.execute()
 				.catch((error) => {
-					client.logger.error(error);
+					logger.error(error);
 					io.emit('success', { success: false, msg: 'Failled to update database with banned player' });
 					return null;
 				});
 
 			return io.emit('success', { success: true, msg: `Banned ${member.mojang_id}` });
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return;
 		}
 	});
@@ -113,24 +125,27 @@ io.on('connection', (socket) => {
 	socket.on('session-start', async (msg: SessionEvent) => {
 		socket.to(CONFIG.client_id).emit('session-start', msg);
 		try {
-			const member = await db.selectFrom('member').selectAll().where('mojang_id', '=', msg.mojang_id).executeTakeFirst();
+			const member = await prisma.member.findFirst({
+				where: {
+					mojang_id: msg.mojang_id
+				}
+			});
 
 			if (!member) {
-				client.logger.warn('Member not found');
+				logger.warn('Member not found');
 				return io.emit('success', { success: false, msg: 'Member not found' });
 			}
 
-			await db
-				.insertInto('session')
-				.values({
+			await prisma.session.create({
+				data: {
 					server_id: msg.server_id,
 					member_id: member.id
-				})
-				.execute();
+				}
+			});
 
 			return io.emit('success', { success: true, msg: `Started session for ${member.mojang_id}` });
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return;
 		}
 	});
@@ -139,33 +154,42 @@ io.on('connection', (socket) => {
 		socket.to(CONFIG.client_id).emit('session-end', msg);
 
 		try {
-			const member = await db.selectFrom('member').selectAll().where('mojang_id', '=', msg.mojang_id).executeTakeFirst();
+			const member = await prisma.member.findFirst({
+				where: {
+					mojang_id: msg.mojang_id
+				}
+			});
 
 			if (!member) {
-				client.logger.warn('Member not found');
+				logger.warn('Member not found');
 				return io.emit('success', { success: false, msg: 'Member not found' });
 			}
 
-			const session = await db
-				.selectFrom('session')
-				.selectAll()
-				.where(sql`member_id = ${member.id} AND server_id = ${msg.server_id} AND session_end IS NULL`)
-				.orderBy('session.id', 'desc')
-				.executeTakeFirst();
+			const session = await prisma.session.findFirst({
+				where: {
+					member_id: member.id,
+					server_id: msg.server_id,
+					end_time: null
+				},
+				orderBy: {
+					session_id: 'desc'
+				}
+			});
 
 			if (!session) return io.emit('success', { success: false, msg: 'Session not found' });
 
-			await db
-				.updateTable('session')
-				.set({
-					session_end: new Date()
-				})
-				.where('id', '=', session.id)
-				.execute();
+			await prisma.session.update({
+				where: {
+					session_id: session.session_id
+				},
+				data: {
+					end_time: new Date()
+				}
+			});
 
 			return io.emit('success', { success: true, msg: `Ended session for ${member.mojang_id}` });
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return;
 		}
 	});
@@ -177,7 +201,7 @@ io.on('connection', (socket) => {
 			if (!console) return;
 
 			if (msg.success) {
-				client.logger.info('Successfully sent event to server');
+				logger.info('Successfully sent event to server');
 
 				const embed = new EmbedBuilder()
 					.setColor('Green')
@@ -192,7 +216,7 @@ io.on('connection', (socket) => {
 				console.send({ embeds: [embed] });
 				return;
 			} else {
-				client.logger.info('Failed to send event to server');
+				logger.info('Failed to send event to server');
 
 				const embed = new EmbedBuilder()
 					.setColor('Red')
@@ -208,23 +232,33 @@ io.on('connection', (socket) => {
 				return;
 			}
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return;
 		}
 	});
 
 	socket.on('disconnect', async () => {
-		client.logger.info(`Socket disconnected: ${socket.id} || ${socket.data.serverId} ❌`);
+		logger.info(`Socket disconnected: ${socket.id} || ${socket.data.serverId} ❌`);
 		try {
-			client.logger.info('Updating sessions');
+			logger.info('Updating sessions');
 
-			await db
-				.updateTable('session')
-				.set({ session_end: new Date() })
-				.where(sql`session_end IS NULL AND server_id = ${socket.data.serverId}`)
-				.execute();
+			const session = await prisma.session.findFirst({
+				where: {
+					end_time: null,
+					server_id: socket.data.serverId
+				}
+			});
+
+			await prisma.session.update({
+				where: {
+					session_id: session?.session_id
+				},
+				data: {
+					end_time: new Date()
+				}
+			});
 		} catch (error) {
-			client.logger.error(error);
+			logger.error(error);
 			return;
 		}
 	});

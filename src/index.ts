@@ -1,9 +1,10 @@
 import './lib/setup';
 import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits, Partials } from 'discord.js';
-import { CONFIG } from './lib/setup';
 import { purge } from './lib/purge';
 import { startApiServer } from './server/api';
+import { CONFIG } from './lib/setup';
+import { logger } from './lib/logger';
 var cron = require('node-cron');
 
 export const client = new SapphireClient({
@@ -28,10 +29,10 @@ export const client = new SapphireClient({
 
 const main = async () => {
 	try {
-		client.logger.info('Guardian is starting up...');
-		await client.login(CONFIG.bot_token).then(() => client.logger.info('Guardian Is Alive!'));
+		logger.info('Guardian is starting up...');
+		await client.login(CONFIG.bot_token).then(() => logger.info('Guardian Is Alive!'));
 	} catch (error) {
-		client.logger.fatal(error);
+		logger.error(error);
 		client.destroy();
 		process.exit(1);
 	}
@@ -40,7 +41,7 @@ const main = async () => {
 		CONFIG.whitelist_manager.inactivity.cron,
 		() => {
 			purge();
-			client.logger.info(`Running a job at ${new Date()}`);
+			logger.info(`Running a job at ${new Date()}`);
 		},
 		{
 			scheduled: CONFIG.whitelist_manager.enabled,
@@ -50,4 +51,4 @@ const main = async () => {
 };
 
 main();
-startApiServer(CONFIG.api_port);
+// startApiServer(CONFIG.api_port);

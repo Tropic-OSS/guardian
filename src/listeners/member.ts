@@ -2,10 +2,12 @@ import { EmbedBuilder, Events, GuildBan, GuildMember, TextChannel } from 'discor
 import { Listener } from '@sapphire/framework';
 import { ApplyOptions } from '@sapphire/decorators';
 import { z } from 'zod';
-import { db } from '../../database/db';
-import { client } from '../..';
-import { io } from '../../server/socket';
-import { CONFIG } from '../../lib/setup';
+import { io } from '../server/socket';
+import { CONFIG } from '../lib/setup';
+import { logger } from '../lib/logger';
+import { prisma } from '../server/db';
+import { MEMBER_STATUS } from '../lib/constants';
+import { client } from '..';
 
 @ApplyOptions<Listener.Options>({ event: Events.GuildBanAdd, name: 'Handle Guild Member Ban' })
 export class MemberBan extends Listener {
@@ -15,26 +17,29 @@ export class MemberBan extends Listener {
 		if (!console) return;
 
 		try {
-			await db
-				.updateTable('member')
-				.where('discord_id', '=', ban.user.id)
-				.set({
-					status: 'BANNED'
-				})
-				.executeTakeFirst();
-
-			const memberProfile = await db.selectFrom('member').selectAll().where('discord_id', '=', ban.user.id).executeTakeFirst();
+			const memberProfile = await prisma.member.findFirst({
+				where: {
+					discord_id: ban.user.id
+				}
+			});
 
 			if (!memberProfile) {
-				client.logger.error(`Player ${ban.user.id} not found`);
-				return;
+				return logger.error(`Player ${ban.user.id} not found`);
 			}
+
+			await prisma.member.update({
+				where: {
+					id: memberProfile.id
+				},
+				data: {
+					status: MEMBER_STATUS.BANNED
+				}
+			});
 
 			const mojangProfile = await getMojangProfile(memberProfile.mojang_id);
 
 			if (!mojangProfile) {
-				client.logger.error(`Player ${ban.user.id} not found`);
-				return;
+				return logger.error(`Player ${ban.user.id} not found`);
 			}
 
 			const event = {
@@ -45,9 +50,10 @@ export class MemberBan extends Listener {
 			io.emit('ban', event);
 
 			const embed = createEmbed('Member Banned', `Member ${ban.user.tag}`);
-			console.send({ embeds: [embed] });
+
+			return console.send({ embeds: [embed] });
 		} catch (error) {
-			client.logger.error(error);
+			return logger.error(error);
 		}
 	}
 }
@@ -67,35 +73,38 @@ export class MemberRemove extends Listener {
 
 async function removeMember(member: GuildMember) {
 	try {
-		await db
-			.updateTable('member')
-			.where('discord_id', '=', member.id)
-			.set({
-				status: 'LEFT'
-			})
-			.executeTakeFirst();
-
-		const memberProfile = await db.selectFrom('member').selectAll().where('discord_id', '=', member.id).executeTakeFirst();
+		const memberProfile = await prisma.member.findFirst({
+			where: {
+				discord_id: member.id
+			}
+		});
 
 		if (!memberProfile) {
-			client.logger.error(`Player ${member.id} not found`);
-			return;
+			return logger.error(`Player ${member.id} not found`);
 		}
+
+		await prisma.member.update({
+			where: {
+				id: memberProfile.id
+			},
+			data: {
+				status: MEMBER_STATUS.LEFT
+			}
+		});
 
 		const mojangProfile = await getMojangProfile(memberProfile.mojang_id);
 
 		if (!mojangProfile) {
-			client.logger.error(`Player ${member.id} not found`);
-			return;
+			return logger.error(`Player ${member.id} not found`);
 		}
 		const event = {
 			id: addDashes(mojangProfile.id),
 			name: mojangProfile.name
 		};
 
-		io.emit('leave', event);
+		return io.emit('leave', event);
 	} catch (error) {
-		client.logger.error(error);
+		return logger.error(error);
 	}
 }
 
