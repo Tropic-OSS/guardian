@@ -155,38 +155,36 @@ export async function purge() {
 				return;
 			});
 
-			await member
-				.kick('Inactive')
-				.then(async () => {
-					await prisma.member.update({
-						where: {
-							mojang_id: row.mojang_id
-						},
-						data: {
-							status: MEMBER_STATUS.INACTIVE
-						}
-					});
-				})
-				.catch(async () => {
-					logger.warn(`Failed to kick member ${member.id}`);
+			const kick = await member.kick('Inactive').catch(async () => {
+				logger.warn(`Failed to kick member ${member.id}`);
 
-					const embed = new EmbedBuilder()
-						.setColor('Red')
-						.setAuthor({
-							name: 'Guardian',
-							iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
-						})
-						.setTitle('Failed to Kick Member (Insufficient Permissions)')
-						.addFields([
-							{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
-							{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
-						])
-						.setImage('https://media.tenor.com/hqze9KtFA0sAAAAC/blocked-kid.gif')
-						.setTimestamp();
+				const embed = new EmbedBuilder()
+					.setColor('Red')
+					.setAuthor({
+						name: 'Guardian',
+						iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
+					})
+					.setTitle('Failed to Kick Member (Insufficient Permissions)')
+					.addFields([
+						{ name: 'Member ID', value: `<@${member.id}>`, inline: true },
+						{ name: 'Mojang', value: mojangProfile?.name ? `${mojangProfile.name}` : `<@${row.discord_id}>`, inline: true }
+					])
+					.setImage('https://media.tenor.com/hqze9KtFA0sAAAAC/blocked-kid.gif')
+					.setTimestamp();
 
-					await console.send({ embeds: [embed] });
-					return;
-				});
+				return await console.send({ embeds: [embed] });
+			});
+
+			if (!kick) return;
+
+			await prisma.member.update({
+				where: {
+					mojang_id: row.mojang_id
+				},
+				data: {
+					status: MEMBER_STATUS.INACTIVE
+				}
+			});
 
 			const embed = new EmbedBuilder()
 				.setColor('Blue')
