@@ -19,6 +19,11 @@ export class UserCommand extends Command {
 	public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
 		if (interaction.member!.user.bot) return interaction.reply('Bots cannot purge members');
 
+		await interaction.reply({
+			content: 'Executing order 66',
+			ephemeral: true
+		});
+
 		return purge();
 	}
 }
