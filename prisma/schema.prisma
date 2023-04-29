@@ -14,7 +14,6 @@ model Application {
   application_answers String
   interview_thread_id String? @unique
   interview_status    String?
-  member              Member  @relation(fields: [member_id], references: [discord_id])
 }
 
 model Member {
@@ -22,7 +21,6 @@ model Member {
   discord_id   String        @unique
   status       String
   grace_period DateTime
-  applications Application[]
   sessions     Session[]
 }
 

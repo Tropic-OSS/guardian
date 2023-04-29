@@ -6,7 +6,7 @@ import { APPLICATION_ROW, APPLICATION_STATUS, BUTTON_IDS } from '../lib/constant
 import { CONFIG } from '../lib/setup';
 import type { Responses } from '../lib/types';
 import { logger } from '../lib/logger';
-import {timeoutCache, prisma } from '../server/db';
+import { timeoutCache, prisma } from '../server/db';
 const wait = require('node:timers/promises').setTimeout;
 
 @ApplyOptions<Listener.Options>({ event: Events.InteractionCreate, name: 'Member Apply' })
@@ -34,7 +34,7 @@ export class ApplyButtonEvent extends Listener {
 			if (checkTimeout) {
 				await interaction.deferReply({ ephemeral: true });
 				await wait(5000);
-				interaction.editReply({
+				return interaction.editReply({
 					content: `Please wait for ${CONFIG.applications.timeout} minutes after your application to apply again thank you`
 				});
 			}

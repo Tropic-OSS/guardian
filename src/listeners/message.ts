@@ -13,15 +13,22 @@ export class MessageRemove extends Listener {
 
 		if (!console) return;
 
-		const application = await prisma.application.update({
-			where:{
+		const application = await prisma.application.findUnique({
+			where: {
+				application_id: message.id
+			}
+		});
+
+		if (!application) return;
+
+		await prisma.application.update({
+			where: {
 				application_id: message.id
 			},
 			data: {
-				application_status: APPLICATION_STATUS.DELETED,
+				application_status: APPLICATION_STATUS.DELETED
 			}
-		})
-		if (!application) return;
+		});
 
 		const embed = new EmbedBuilder()
 			.setColor('Red')

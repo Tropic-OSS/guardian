@@ -45,7 +45,7 @@ export class UserCommand extends Command {
 
 		try {
 			const [member, mojangUser] = await Promise.all([
-				interaction.guild!.members.fetch(memberApplication.application_id),
+				interaction.guild!.members.fetch(memberApplication.member_id),
 				getMojangProfile(value!.toString())
 			]);
 
