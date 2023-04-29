@@ -100,6 +100,15 @@ export async function purge() {
 					.setImage('https://media.tenor.com/nP0VTQlKjNwAAAAC/velma-glasses.gif')
 					.setTimestamp();
 
+				await prisma.member.update({
+					where: {
+						id: row.id
+					},
+					data: {
+						status: 'UNKNOWN'
+					}
+				});
+
 				await console.send({ embeds: [embed] });
 				return;
 			});
