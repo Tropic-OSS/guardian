@@ -8,14 +8,18 @@ import { MEMBER_STATUS } from './constants';
 
 export async function purge() {
 	try {
-		const cutoffDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days ago
+		const cutoffDate = new Date();
+		cutoffDate.setDate(cutoffDate.getDate() - CONFIG.whitelist_manager.inactivity.remove_inactive_player_after_days);
 
 		const inactiveMembers = await prisma.member.findMany({
 			where: {
-				sessions: {
-					some: {
-						end_time: {
-							lt: cutoffDate
+				status: MEMBER_STATUS.ACTIVE,
+				NOT: {
+					sessions: {
+						some: {
+							start_time: {
+								gte: cutoffDate.toISOString()
+							}
 						}
 					}
 				}
