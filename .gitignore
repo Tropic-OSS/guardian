@@ -18,6 +18,8 @@ Test/
 # Ignore the config file (contains sensitive information such as tokens)
 config.ts
 config.json
+config.yml
+logs/
 
 # Ignore heapsnapshot and log files
 *.heapsnapshot
