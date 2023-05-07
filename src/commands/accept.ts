@@ -128,19 +128,13 @@ export class UserCommand extends Command {
 					});
 				});
 
-			await Promise.all([
-				member.roles.add(memberRole),
-				member.roles.remove(interviewRole),
-				member.setNickname(member.displayName + `(${mojangUser.name})`),
-				acceptChannel.send(CONFIG.accept_message.replace('{member}', member.toString()))
-			]).catch(async (err) => {
-				logger.error(err);
-				return await interaction.reply({
-					content:
-						'Something went wrong trying to accept member, if the problem persists go to your error logs and file a report on github',
-					ephemeral: true
-				});
-			});
+			await member.roles.add(memberRole);
+
+			await member.roles.remove(interviewRole);
+
+			await member.setNickname(member.displayName + `(${mojangUser.name})`);
+
+			await acceptChannel.send(CONFIG.accept_message.replace('{member}', member.toString()));
 
 			const event = {
 				id: addDashes(mojangUser.id),
