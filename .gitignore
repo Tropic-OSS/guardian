@@ -13,6 +13,8 @@ node_modules/
 
 dist/
 
+build/
+
 Test/
 
 # Ignore the config file (contains sensitive information such as tokens)
