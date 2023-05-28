@@ -27,13 +27,10 @@ export class MemberBan extends Listener {
 				return logger.error(`Player ${ban.user.id} not found`);
 			}
 
-			await prisma.member.update({
+			await prisma.member.delete({
 				where: {
 					id: memberProfile.id
 				},
-				data: {
-					status: MEMBER_STATUS.BANNED
-				}
 			});
 
 			const mojangProfile = await getMojangProfile(memberProfile.mojang_id);
@@ -83,13 +80,10 @@ async function removeMember(member: GuildMember) {
 			return logger.error(`Player ${member.id} not found`);
 		}
 
-		await prisma.member.update({
+		await prisma.member.delete({
 			where: {
 				id: memberProfile.id
 			},
-			data: {
-				status: MEMBER_STATUS.LEFT
-			}
 		});
 
 		const mojangProfile = await getMojangProfile(memberProfile.mojang_id);

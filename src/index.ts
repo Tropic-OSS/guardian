@@ -2,7 +2,6 @@ import './lib/setup';
 import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits, Partials } from 'discord.js';
 import { purge } from './lib/purge';
-import { startApiServer } from './server/api';
 import { CONFIG } from './lib/setup';
 import { logger } from './lib/logger';
 var cron = require('node-cron');
