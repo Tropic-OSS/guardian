@@ -4,7 +4,6 @@ import { CONFIG } from './setup';
 import { client } from '..';
 import { logger } from './logger';
 import { prisma } from '../server/db';
-import { MEMBER_STATUS } from './constants';
 
 export async function purge() {
 	try {
@@ -13,7 +12,6 @@ export async function purge() {
 
 		const inactiveMembers = await prisma.member.findMany({
 			where: {
-				status: MEMBER_STATUS.ACTIVE,
 				NOT: {
 					sessions: {
 						some: {
@@ -83,8 +81,8 @@ export async function purge() {
 				return logger.info(`Skipping member ${row.discord_id} as they are in the grace period`);
 			}
 
-			const member = await guild.members.fetch(row.discord_id).catch(async () => {
-				logger.warn(`Failed to fetch member ${row.discord_id}`);
+			const member = await guild.members.fetch(row.discord_id).catch(async (error) => {
+				logger.warn(`Failed to fetch member ${row.discord_id} : `, error);
 
 				const embed = new EmbedBuilder()
 					.setColor('Red')
@@ -100,13 +98,10 @@ export async function purge() {
 					.setImage('https://media.tenor.com/nP0VTQlKjNwAAAAC/velma-glasses.gif')
 					.setTimestamp();
 
-				await prisma.member.update({
+				await prisma.member.delete({
 					where: {
 						id: row.id
 					},
-					data: {
-						status: 'UNKNOWN'
-					}
 				});
 
 				await console.send({ embeds: [embed] });
@@ -177,12 +172,9 @@ export async function purge() {
 
 			if (!kick) return;
 
-			await prisma.member.update({
+			await prisma.member.delete({
 				where: {
 					mojang_id: row.mojang_id
-				},
-				data: {
-					status: MEMBER_STATUS.INACTIVE
 				}
 			});
 

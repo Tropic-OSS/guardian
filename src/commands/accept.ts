@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { prisma } from '../server/db';
 import { logger } from '../lib/logger';
 import { CONFIG } from '../lib/setup';
-import { APPLICATION_STATUS, INTERVIEW_STATUS, MEMBER_STATUS } from '../lib/constants';
+import { APPLICATION_STATUS, INTERVIEW_STATUS } from '../lib/constants';
 import { io } from '../server/socket';
 
 @ApplyOptions<Command.Options>({
@@ -98,14 +98,11 @@ export class UserCommand extends Command {
 						},
 						update: {
 							mojang_id: addDashes(mojangUser.id),
-
 							discord_id: member.id,
 							grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days),
-							status: MEMBER_STATUS.ACTIVE
 						},
 						create: {
 							mojang_id: addDashes(mojangUser.id),
-							status: MEMBER_STATUS.ACTIVE,
 							discord_id: member.id,
 							grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
 						}
