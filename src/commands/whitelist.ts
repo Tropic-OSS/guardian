@@ -18,7 +18,7 @@ export class UserCommand extends Command {
 		// Register slash command
 		registry.registerChatInputCommand((builder) =>
 			builder
-				.setName('whitlist')
+				.setName('whitelist')
 				.setDescription('Creates Whitelist')
 		);
 	}
@@ -39,9 +39,9 @@ export class UserCommand extends Command {
 	}
 }
 
-async function getMojangProfile(username: string) {
+async function getMojangProfile(id: string) {
 	try {
-		const response = await fetch(`https://api.mojang.com/users/profiles/minecraft/${username}`);
+		const response = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${id}`);
 
 		if (response.status === 204 || response.status === 404) {
 			return null;
