@@ -6,7 +6,6 @@ import { io } from '../server/socket';
 import { CONFIG } from '../lib/setup';
 import { logger } from '../lib/logger';
 import { prisma } from '../server/db';
-import { MEMBER_STATUS } from '../lib/constants';
 import { client } from '..';
 
 @ApplyOptions<Listener.Options>({ event: Events.GuildBanAdd, name: 'Handle Guild Member Ban' })
@@ -29,7 +28,7 @@ export class MemberBan extends Listener {
 
 			await prisma.member.delete({
 				where: {
-					id: memberProfile.id
+					mojang_id: memberProfile.mojang_id
 				},
 			});
 
@@ -82,7 +81,7 @@ async function removeMember(member: GuildMember) {
 
 		await prisma.member.delete({
 			where: {
-				id: memberProfile.id
+				mojang_id: memberProfile.mojang_id
 			},
 		});
 

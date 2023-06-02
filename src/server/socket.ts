@@ -121,7 +121,7 @@ io.on('connection', (socket) => {
 	socket.on('session-start', async (msg: SessionEvent) => {
 		socket.to(CONFIG.client_id).emit('session-start', msg);
 		try {
-			
+
 			await prisma.session.create({
 				data: {
 					server_id: msg.server_id,
