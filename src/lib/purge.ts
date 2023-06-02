@@ -100,7 +100,7 @@ export async function purge() {
 
 				await prisma.member.delete({
 					where: {
-						id: row.id
+						mojang_id: row.mojang_id
 					},
 				});
 
