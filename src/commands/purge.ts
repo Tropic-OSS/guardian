@@ -2,7 +2,7 @@ import { ApplyOptions, RequiresGuildContext } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { send } from '@sapphire/plugin-editable-commands';
 import { Message } from 'discord.js';
-import { purge } from '../lib/purge';
+import { purgeInactiveMembers } from '../lib/purge';
 
 @ApplyOptions<Command.Options>({
 	description: 'Purge Members',
@@ -24,6 +24,6 @@ export class UserCommand extends Command {
 			ephemeral: true
 		});
 
-		return purge();
+		return purgeInactiveMembers();
 	}
 }
