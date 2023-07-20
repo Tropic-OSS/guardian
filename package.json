@@ -6,7 +6,7 @@
 	"license": "UNLICENSE",
 	"dependencies": {
 		"@fastify/websocket": "^8.0.0",
-		"@prisma/client": "^4.13.0",
+		"@prisma/client": "^5.0.0",
 		"@sapphire/decorators": "^6.0.1",
 		"@sapphire/discord.js-utilities": "^6.0.6",
 		"@sapphire/framework": "^4.0.0",
@@ -33,7 +33,7 @@
 		"@sapphire/prettier-config": "^1.4.4",
 		"chokidar": "^3.5.3",
 		"prettier": "^2.8.2",
-		"prisma": "^4.13.0"
+		"prisma": "^5.0.0"
 	},
 	"scripts": {
 		"build": "swc src -d dist",
