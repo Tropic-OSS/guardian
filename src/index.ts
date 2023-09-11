@@ -1,7 +1,7 @@
 import './lib/setup';
 import { LogLevel, SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits, Partials } from 'discord.js';
-import { purge } from './lib/purge';
+import { purgeInactiveMembers } from './lib/purge';
 import { CONFIG } from './lib/setup';
 import { logger } from './lib/logger';
 var cron = require('node-cron');
@@ -39,7 +39,7 @@ const main = async () => {
 	cron.schedule(
 		CONFIG.whitelist_manager.inactivity.cron,
 		() => {
-			purge();
+			purgeInactiveMembers();
 			logger.info(`Running a job at ${new Date()}`);
 		},
 		{

@@ -38,7 +38,7 @@
 	"scripts": {
 		"build": "swc src -d dist",
 		"start": "node dist/index.js",
-		"dev": "swc src -d dist -w & nodemon dist/app.js",
+		"dev": "swc src -d dist -w & nodemon dist/index.js",
 		"format": "prettier --write \"src/**/*.ts\"",
 		"postinstall": "prisma db push"
 	},
