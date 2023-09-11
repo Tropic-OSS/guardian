@@ -1,14 +1,21 @@
-import { EmbedBuilder, TextChannel } from 'discord.js';
+import {EmbedBuilder, PermissionsBitField, TextChannel} from 'discord.js';
 import { Server } from 'socket.io';
 import { CONFIG } from '../lib/setup';
 import { prisma } from './db';
 import { logger } from '../lib/logger';
 import { client } from '..';
 
+type ServerBanEvent = {
+	id: string;
+	name: string;
+	reason: string;
+};
+
 type BanEvent = {
 	id: string;
 	name: string;
 	reason: string;
+	admin:string;
 };
 
 type SessionEvent = {
@@ -61,6 +68,91 @@ io.on('connection', (socket) => {
 
 	socket.on('ban', async (msg: BanEvent) => {
 		socket.to(CONFIG.client_id).emit('ban', msg);
+		try {
+			const guild = await client.guilds.fetch(CONFIG.guild_id).catch((error) => {
+				logger.error(error);
+				return null;
+			});
+
+			if (!guild) {
+				logger.warn('Guild not found');
+				return io.emit('success', { success: false, msg: 'Guild not found' });
+			}
+
+			const admin = await prisma.member.findFirst({
+				where : {
+					mojang_id: msg.admin
+				}
+			})
+
+			if (!admin) {
+				return io.emit('success', { success: false, msg: 'Admin not found' });
+			}
+
+			const discordAdmin = await guild.members.fetch(admin.discord_id).catch((error) => {
+				logger.error(error);
+				return null;
+			});
+
+			if (!discordAdmin) {
+				logger.warn('Discord admin not found');
+				return io.emit('success', { success: false, msg: 'Discord admin not found' });
+			}
+
+			if (!discordAdmin.permissions.has(PermissionsBitField.Flags.BanMembers))
+			{
+				logger.warn('Not allowed');
+				return io.emit('success', { success: false, msg: 'Not allowed' });
+			}
+
+			const member = await prisma.member.findFirst({
+				where: {
+					mojang_id: msg.id
+				}
+			});
+
+			if (!member) {
+				logger.warn('Member not found');
+				return io.emit('success', { success: false, msg: 'Member not found' });
+			}
+
+			const discordMember = await guild.members.fetch(member.discord_id).catch((error) => {
+				logger.error(error);
+				return null;
+			});
+
+			if (!discordMember) {
+				logger.warn('Discord member not found');
+				return io.emit('success', { success: false, msg: 'Discord member not found' });
+			}
+
+			await discordMember.ban({ reason: msg.reason }).catch((error) => {
+				logger.error(error);
+				io.emit('success', { success: false, msg: 'Discord member could not be banned' });
+				return null;
+			});
+
+			await prisma.member
+				.delete({
+					where: {
+						mojang_id: msg.id
+					}
+				})
+				.catch((error) => {
+					logger.error(error);
+					io.emit('success', { success: false, msg: 'Failled to update database with banned player' });
+					return null;
+				});
+
+			return io.emit('success', { success: true, msg: `Banned ${member.mojang_id}` });
+		} catch (error) {
+			logger.error(error);
+			return;
+		}
+	});
+
+	socket.on('server-ban', async (msg: ServerBanEvent) => {
+		socket.to(CONFIG.client_id).emit('server-ban', msg);
 		try {
 			const guild = await client.guilds.fetch(CONFIG.guild_id).catch((error) => {
 				logger.error(error);
