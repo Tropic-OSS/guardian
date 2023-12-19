@@ -50,3 +50,4 @@ const main = async () => {
 };
 
 main();
+// startApiServer(CONFIG.api_port);
