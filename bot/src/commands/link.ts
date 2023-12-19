@@ -28,83 +28,89 @@ export class UserCommand extends Command {
 
     @RequiresGuildContext((message: Message) => send(message, 'This command can only be used in servers'))
     public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-        try {
-            if (interaction.member!.user.bot) return await interaction.reply('Bots cannot link members');
+        if (interaction.member!.user.bot) return interaction.reply('Bots cannot link members');
 
-            const { value: username } = interaction.options.get('username', true);
+        const { value: username } = interaction.options.get('username', true);
 
-            const { value: discord } = interaction.options.get('discord', true);
+        const { value: discord } = interaction.options.get('discord', true);
 
-            const [member, mojangUser] = await Promise.all([
-                interaction.guild!.members.fetch(discord as string),
-                getMojangProfile(username as string)
-            ]);
+        const [member, mojangUser] = await Promise.all([
+            interaction.guild!.members.fetch(discord as string),
+            getMojangProfile(username as string)
+        ]);
 
-            if (!member || !mojangUser) {
-                return await interaction.reply({ content: 'Member or Mojang User could not be found', ephemeral: true });
-            }
+        if (!member || !mojangUser) {
+            return await interaction.reply({ content: 'Member or Mojang User could not be found', ephemeral: true });
+        }
 
-            const memberRole = await interaction.guild!.roles.fetch(CONFIG.member_role)
+        const memberRole = await interaction.guild!.roles.fetch(CONFIG.member_role)
 
-            const acceptChannel = await interaction.guild!.channels.fetch(CONFIG.accept_channel) as TextChannel;
+        const acceptChannel = await interaction.guild!.channels.fetch(CONFIG.accept_channel) as TextChannel;
 
-            if (!memberRole || !acceptChannel)
-                return await interaction
-                    .reply({
-                        content:
-                            'Something went wrong trying to fetch roles and channels, check if your config file values are corrct, if the problem persists go to your error logs and file a report on github',
-                        ephemeral: true
-                    })
-
-            prisma.member.upsert({
-                where: {
-                    mojang_id: addDashes(mojangUser.id)
-                },
-                update: {
-                    mojang_id: addDashes(mojangUser.id),
-                    discord_id: member.id,
-                    grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days),
-                },
-                create: {
-                    mojang_id: addDashes(mojangUser.id),
-                    discord_id: member.id,
-                    grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
-                }
-            })
-
-            await member.roles.add(memberRole).catch(async (err) => {
-
-            })
-
-            await member.setNickname(member.displayName + `(${mojangUser.name})`);
-
-            const event = {
-                id: addDashes(mojangUser.id),
-                name: mojangUser.name
-            };
-
-            io.emit('add', event);
-
-            const embed = new EmbedBuilder()
-                .setColor('#0099ff')
-                .setTitle(`Link Created`)
-                .setAuthor({
-                    name: 'Guardian',
-                    iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
+        if (!memberRole || !acceptChannel)
+            return await interaction
+                .reply({
+                    content:
+                        'Something went wrong trying to fetch roles and channels, check if your config file values are corrct, if the problem persists go to your error logs and file a report on github',
+                    ephemeral: true
                 })
-                .addFields({ name: 'Discord Name', value: `${member}`, inline: true }, { name: 'IGN', value: `${mojangUser.name}`, inline: true })
-                .setImage(`https://crafatar.com/renders/body/${mojangUser.id}?scale=3`)
-                .setTimestamp();
+                .catch(async (err) => {
+                    logger.error(err);
+                });
 
-            return await interaction.reply({ embeds: [embed] });
-        } catch (error) {
-            logger.error(error);
+        prisma.member.upsert({
+            where: {
+                mojang_id: addDashes(mojangUser.id)
+            },
+            update: {
+                mojang_id: addDashes(mojangUser.id),
+                discord_id: member.id,
+                grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days),
+            },
+            create: {
+                mojang_id: addDashes(mojangUser.id),
+                discord_id: member.id,
+                grace_period: new Date(Date.now() + 1000 * 60 * 60 * 24 * CONFIG.whitelist_manager.inactivity.grace_period_days)
+            }
+        }).catch(async (err) => {
+            logger.error(err);
+            return await interaction.reply({
+                content:
+                    'Something went wrong trying to add member to the database, if the problem persists go to your error logs and file a report on github',
+                ephemeral: true
+            });
+        });
+
+        await member.roles.add(memberRole).catch(async (err) => {
+            logger.error(err);
             return await interaction.reply({
                 content:
                     'Something went wrong trying to add role to user,check if they already have the role,if the problem persists go to your error logs and file a report on github',
                 ephemeral: true
             });
-        }
+        })
+
+        await member.setNickname(member.displayName + `(${mojangUser.name})`);
+
+        const event = {
+            id: addDashes(mojangUser.id),
+            name: mojangUser.name
+        };
+
+        io.emit('add', event);
+
+        const embed = new EmbedBuilder()
+            .setColor('#0099ff')
+            .setTitle(`Link Created`)
+            .setAuthor({
+                name: 'Guardian',
+                iconURL: 'https://cdn.discordapp.com/avatars/1063626648399921170/60021a9282221d831512631d8e82b33d.png'
+            })
+            .addFields({ name: 'Discord Name', value: `${member}`, inline: true }, { name: 'IGN', value: `${mojangUser.name}`, inline: true })
+            .setImage(`https://crafatar.com/renders/body/${mojangUser.id}?scale=3`)
+            .setTimestamp();
+
+        return interaction.reply({ embeds: [embed] });
     }
 }
 
