@@ -10,6 +10,10 @@ export const logger = winston.createLogger({
 			zippedArchive: true,
 			maxSize: '20m',
 			maxFiles: '5d',
+			format: winston.format.combine(
+				winston.format.timestamp(),
+				winston.format.json()
+			)
 		}),
 		new transports.Console({
 			level: 'info',
