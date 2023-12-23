@@ -1,4 +1,4 @@
-import {EmbedBuilder, PermissionsBitField, TextChannel} from 'discord.js';
+import { EmbedBuilder, PermissionsBitField, TextChannel } from 'discord.js';
 import { Server } from 'socket.io';
 import { CONFIG } from '../lib/setup';
 import { prisma } from './db';
@@ -15,7 +15,7 @@ type BanEvent = {
 	id: string;
 	name: string;
 	reason: string;
-	admin:string;
+	admin: string;
 };
 
 type SessionEvent = {
@@ -80,7 +80,7 @@ io.on('connection', (socket) => {
 			}
 
 			const admin = await prisma.member.findFirst({
-				where : {
+				where: {
 					mojang_id: msg.admin
 				}
 			})
@@ -99,8 +99,7 @@ io.on('connection', (socket) => {
 				return io.emit('success', { success: false, msg: 'Discord admin not found' });
 			}
 
-			if (!discordAdmin.permissions.has(PermissionsBitField.Flags.BanMembers))
-			{
+			if (!discordAdmin.permissions.has(PermissionsBitField.Flags.BanMembers)) {
 				logger.warn('Not allowed');
 				return io.emit('success', { success: false, msg: 'Not allowed' });
 			}
@@ -327,9 +326,11 @@ io.on('connection', (socket) => {
 				}
 			});
 
+			if (!session) return;
+
 			await prisma.session.update({
 				where: {
-					session_id: session?.session_id
+					session_id: session.session_id
 				},
 				data: {
 					end_time: new Date()
