@@ -37,3 +37,4 @@ logs/
 dev.db
 database.sqlite3
 
+package-lock.json
