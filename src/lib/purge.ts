@@ -70,6 +70,8 @@ export async function purgeInactiveMembers() {
 					where: {
 						mojang_id: row.mojang_id
 					}
+				}).catch(async (error) => {
+					logger.error(`Failed to delete member ${row.discord_id} from database:`, error);
 				});
 
 				const embed = new EmbedBuilder()
@@ -91,7 +93,7 @@ export async function purgeInactiveMembers() {
 				await consoleChannel.send({ embeds: [embed] });
 			} catch (error) {
 				// Log and handle any errors within the loop
-				logger.error('Error occurred while processing member:', error);
+				logger.error(`Error occurred while processing member:`, error);
 			}
 		}
 	} catch (error) {
