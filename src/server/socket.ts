@@ -70,13 +70,13 @@ io.on('connection', (socket) => {
 		socket.to(CONFIG.client_id).emit('ban', msg);
 		try {
 			const guild = await client.guilds.fetch(CONFIG.guild_id).catch((error) => {
-				logger.error(error);
+				logger.error(`Error while trying to fetch guild ${CONFIG.guild_id}: ${error}`);
 				return null;
 			});
 
 			if (!guild) {
-				logger.warn('Guild not found');
-				return io.emit('success', { success: false, msg: 'Guild not found' });
+				logger.warn(`Guild ${CONFIG.guild_id} not found`);
+				return io.emit('success', { success: false, msg: `Guild ${CONFIG.guild_id} not found` });
 			}
 
 			const admin = await prisma.member.findFirst({
@@ -86,22 +86,22 @@ io.on('connection', (socket) => {
 			})
 
 			if (!admin) {
-				return io.emit('success', { success: false, msg: 'Admin not found' });
+				return io.emit('success', { success: false, msg: `Admin ${msg.admin} not found` });
 			}
 
 			const discordAdmin = await guild.members.fetch(admin.discord_id).catch((error) => {
-				logger.error(error);
+				logger.error(`Error while trying to fetch admin ${admin.discord_id}: ${error}`);
 				return null;
 			});
 
 			if (!discordAdmin) {
-				logger.warn('Discord admin not found');
-				return io.emit('success', { success: false, msg: 'Discord admin not found' });
+				logger.warn(`Admin ${admin.discord_id} not found`);
+				return io.emit('success', { success: false, msg: `Admin ${admin.discord_id} not found` });
 			}
 
 			if (!discordAdmin.permissions.has(PermissionsBitField.Flags.BanMembers)) {
-				logger.warn('Not allowed');
-				return io.emit('success', { success: false, msg: 'Not allowed' });
+				logger.warn(`User ${admin.discord_id} does not have permission to ban members`);
+				return io.emit('success', { success: false, msg: `User ${admin.discord_id} does not have permission to ban members` });
 			}
 
 			const member = await prisma.member.findFirst({
@@ -111,23 +111,23 @@ io.on('connection', (socket) => {
 			});
 
 			if (!member) {
-				logger.warn('Member not found');
-				return io.emit('success', { success: false, msg: 'Member not found' });
+				logger.warn(`Member ${msg.id} not found`);
+				return io.emit('success', { success: false, msg: `Member ${msg.id} not found` });
 			}
 
 			const discordMember = await guild.members.fetch(member.discord_id).catch((error) => {
-				logger.error(error);
+				logger.error(`Error while trying to fetch member ${member.discord_id}: ${error}`);
 				return null;
 			});
 
 			if (!discordMember) {
-				logger.warn('Discord member not found');
-				return io.emit('success', { success: false, msg: 'Discord member not found' });
+				logger.warn(`Member ${member.discord_id} not found`);
+				return io.emit('success', { success: false, msg: `Member ${member.discord_id} not found` });
 			}
 
 			await discordMember.ban({ reason: msg.reason }).catch((error) => {
-				logger.error(error);
-				io.emit('success', { success: false, msg: 'Discord member could not be banned' });
+				logger.error(`Error while trying to ban member ${member.discord_id}: ${error}`);
+				io.emit('success', { success: false, msg: `Discord member ${member.discord_id} could not be banned` });
 				return null;
 			});
 
@@ -138,8 +138,8 @@ io.on('connection', (socket) => {
 					}
 				})
 				.catch((error) => {
-					logger.error(error);
-					io.emit('success', { success: false, msg: 'Failled to update database with banned player' });
+					logger.error(`Error while trying to delete member ${msg.id}: ${error}`);
+					io.emit('success', { success: false, msg: `Failled to update database with banned player` });
 					return null;
 				});
 
@@ -159,8 +159,8 @@ io.on('connection', (socket) => {
 			});
 
 			if (!guild) {
-				logger.warn('Guild not found');
-				return io.emit('success', { success: false, msg: 'Guild not found' });
+				logger.warn(`Guild ${CONFIG.guild_id} not found`);
+				return io.emit('success', { success: false, msg: `Guild ${CONFIG.guild_id} not found` });
 			}
 
 			const member = await prisma.member.findFirst({
@@ -170,23 +170,23 @@ io.on('connection', (socket) => {
 			});
 
 			if (!member) {
-				logger.warn('Member not found');
-				return io.emit('success', { success: false, msg: 'Member not found' });
+				logger.warn(`Member ${msg.id} not found`);
+				return io.emit('success', { success: false, msg: `Member ${msg.id} not found` });
 			}
 
 			const discordMember = await guild.members.fetch(member.discord_id).catch((error) => {
-				logger.error(error);
+				logger.error(`Error while trying to fetch member ${member.discord_id}: ${error}`);
 				return null;
 			});
 
 			if (!discordMember) {
-				logger.warn('Discord member not found');
-				return io.emit('success', { success: false, msg: 'Discord member not found' });
+				logger.warn(`Member ${member.discord_id} not found`);
+				return io.emit('success', { success: false, msg: `Member ${member.discord_id} not found` });
 			}
 
 			await discordMember.ban({ reason: msg.reason }).catch((error) => {
-				logger.error(error);
-				io.emit('success', { success: false, msg: 'Discord member could not be banned' });
+				logger.error(`Error while trying to ban member ${member.discord_id}: ${error}`);
+				io.emit('success', { success: false, msg: `Discord member ${member.discord_id} could not be banned` });
 				return null;
 			});
 
@@ -197,8 +197,8 @@ io.on('connection', (socket) => {
 					}
 				})
 				.catch((error) => {
-					logger.error(error);
-					io.emit('success', { success: false, msg: 'Failled to update database with banned player' });
+					logger.error(`Error while trying to delete member ${msg.id}: ${error}`);
+					io.emit('success', { success: false, msg: `Failled to update database with banned player` });
 					return null;
 				});
 
@@ -222,7 +222,7 @@ io.on('connection', (socket) => {
 
 			return io.emit('success', { success: true, msg: `Started session for ${msg.mojang_id}` });
 		} catch (error) {
-			logger.error(error);
+			logger.error(`Error while trying to start session for ${msg.mojang_id}: ${error}`);
 			return;
 		}
 	});
@@ -238,8 +238,8 @@ io.on('connection', (socket) => {
 			});
 
 			if (!member) {
-				logger.warn('Member not found');
-				return io.emit('success', { success: false, msg: 'Member not found' });
+				logger.warn(`Member ${msg.mojang_id} not found`);
+				return io.emit('success', { success: false, msg: `Member ${msg.mojang_id} not found` });
 			}
 
 			const session = await prisma.session.findFirst({
@@ -253,7 +253,10 @@ io.on('connection', (socket) => {
 				}
 			});
 
-			if (!session) return io.emit('success', { success: false, msg: 'Session not found' });
+			if (!session) {
+				logger.warn(`Session for ${member.mojang_id} not found`);
+				return io.emit('success', { success: false, msg: `Session for ${member.mojang_id} not found` })
+			};
 
 			await prisma.session.update({
 				where: {
@@ -309,7 +312,7 @@ io.on('connection', (socket) => {
 				return;
 			}
 		} catch (error) {
-			logger.error(error);
+			logger.error(`Error while trying to send success message: ${error}`);
 			return;
 		}
 	});
@@ -337,7 +340,7 @@ io.on('connection', (socket) => {
 				}
 			});
 		} catch (error) {
-			logger.error(error);
+			logger.error(`Error while trying to update sessions: ${error}`);
 			return;
 		}
 	});
