@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id         Int         @id @default(autoincrement())
+  message_id String      @unique
+  discord_id String
+  status     Status
+  answers    Json
+  interviews Interview[]
+}
+
+model Interview {
+  id             Int         @id @default(autoincrement())
+  thread_id      String      @unique
+  application_id Int         @unique
+  status         Status
+  Application    Application @relation(fields: [application_id], references: [id])
+}
+
+model Member {
+  id           Int       @id @default(autoincrement())
+  mojang_id    String
+  discord_id   String
+  grace_period DateTime
+  sessions     Session[]
+}
+
+model Server {
+  id      Int       @id @default(autoincrement())
+  name    String
+  token   String
+  Session Session[]
+}
+
+model Session {
+  id         Int       @id @default(autoincrement())
+  member_id  Int
+  server_id  Int
+  start_time DateTime  @default(now())
+  end_time   DateTime?
+  server     Server    @relation(fields: [server_id], references: [id], onDelete: Cascade)
+  member     Member    @relation(fields: [member_id], references: [id], onDelete: Cascade)
+}
+
+enum Status {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
