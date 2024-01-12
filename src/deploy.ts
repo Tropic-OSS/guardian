@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { REST, Routes } from "discord.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -56,7 +57,6 @@ const rest = new REST().setToken(config.bot_token);
       { body: commands },
     );
 
-    // @ts-ignore
     console.log(
       `Successfully reloaded ${data.length} application (/) commands.`,
     );
