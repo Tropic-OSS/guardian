@@ -2,7 +2,7 @@ import Keyv from "keyv";
 import { PrismaClient } from "@prisma/client";
 
 export const cache = new Keyv().on("error", (err) => {
-  console.error("Keyv connection error:", err);
+  logger.error("Keyv connection error:", err);
 });
 
 const globalForPrisma = globalThis as unknown as {

@@ -3,6 +3,7 @@ import { getConfig } from "./lib/config";
 import fs from "fs";
 import path from "path";
 import { REST, Routes } from "discord.js";
+import { logger } from "./lib/logger";
 
 const config = getConfig();
 
@@ -14,7 +15,6 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
   ],
 });
-
 
 client.config = config;
 client.commands = new Collection();
@@ -39,8 +39,8 @@ for (const folder of commandFolders) {
       client.commands.set(command.data.name, command);
       commands.push(command.data.toJSON());
     } else {
-      console.log(
-        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
+      logger.warn(
+        `The command at ${filePath} is missing a required "data" or "execute" property.`,
       );
     }
   }
@@ -55,8 +55,8 @@ const rest = new REST().setToken(config.bot_token);
     .put(Routes.applicationGuildCommands(config.client_id, config.guild_id), {
       body: [],
     })
-    .then(() => console.log("Successfully deleted all guild commands."))
-    .catch(console.error);
+    .then(() => logger.info("Successfully deleted all guild commands."))
+    .catch(logger.error);
 })();
 
 // and deploy commands!
@@ -68,16 +68,15 @@ const rest = new REST().setToken(config.bot_token);
       { body: commands },
     );
 
-    console.log(
+    logger.info(
       // @ts-ignore
       `Successfully reloaded ${data.length} application (/) commands.`,
     );
   } catch (error) {
     // And of course, make sure you catch and log any errors!
-    console.error(error);
+    logger.error(error);
   }
 })();
-
 
 // Event Handler
 const eventsPath = path.join(__dirname, "events");

@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+export type Responses = {
+  question: string;
+  content: string;
+}[];
+
 export const ConfigSchema = z.object({
   prefix: z.string().default("!"),
   console_channel: z.string(),
