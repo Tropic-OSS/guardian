@@ -9,7 +9,7 @@ datasource db {
 
 model Application {
   id         Int         @id @default(autoincrement())
-  message_id String      @unique
+  message_id String?     @unique
   discord_id String
   status     Status
   answers    Json
