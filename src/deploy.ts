@@ -47,10 +47,6 @@ const rest = new REST().setToken(config.bot_token);
 // and deploy commands!
 (async () => {
   try {
-    console.log(
-      `Started refreshing ${commands.length} application (/) commands.`,
-    );
-
     // The put method is used to fully refresh all commands in the guild with the current set
     const data = await rest.put(
       Routes.applicationGuildCommands(config.client_id, config.guild_id),
