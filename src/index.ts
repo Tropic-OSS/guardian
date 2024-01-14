@@ -7,7 +7,7 @@ import { logger } from "./lib/logger";
 
 const config = getConfig();
 
-const client = new Client({
+export const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
@@ -93,4 +93,5 @@ for (const file of eventFiles) {
     client.on(event.name, (...args) => event.execute(...args));
   }
 }
+
 client.login(client.config.bot_token);

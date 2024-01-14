@@ -4,6 +4,7 @@ import { cache, prisma } from "../lib/db";
 import { logger } from "../lib/logger";
 import { Responses } from "../types/types";
 import { Application } from "@prisma/client";
+import { json } from "stream/consumers";
 const wait = require("node:timers/promises").setTimeout;
 
 module.exports = {
@@ -100,7 +101,8 @@ async function sendQuestions(interaction: ButtonInteraction) {
       data: {
         discord_id: member.id,
         status: APPLICATION_STATUS.PENDING,
-        answers: responses
+        answers: JSON.stringify(responses)
+        
       }
     });
 
