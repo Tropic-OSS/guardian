@@ -1,5 +1,6 @@
 import Keyv from "keyv";
 import { PrismaClient } from "@prisma/client";
+import { logger } from "./logger";
 
 export const cache = new Keyv().on("error", (err) => {
   logger.error("Keyv connection error:", err);

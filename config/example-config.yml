@@ -1,0 +1,36 @@
+prefix: "!"
+token: "your-bot-token-here"
+guildId: "your-guild-id-here"
+clientId: "your-client-id-here"
+consoleChannel: "console-channel-id"
+server:
+  websocketPort: 3000
+  apiPort: 4000
+  token: "server-token"
+applications:
+  enabled: true
+  timeout: 60
+  channel: "applications-channel-id"
+  questions:
+    - "question1"
+    - "question2"
+interviews:
+  enabled: true
+  private: false
+  role: "interviewer-role-id"
+  channel: "interviews-channel-id"
+  notification: "notification-channel-id"
+onboarding:
+  memberRole: "member-role-id"
+  joinChannel: "welcome-channel-id"
+  joinMessage: "Welcome to the server!"
+  acceptChannel: "acceptance-channel-id"
+  acceptMessage: "You've been accepted!"
+inactivity:
+  enabled: true
+  message: "You have been removed due to inactivity."
+  vacationRole: "vacation-role-id"
+  removeInactivePlayerAfterDays: 30
+  gracePeriodDays: 7
+  timezone: "UTC"
+  cron: "0 0 * * *"  # Daily cron job at midnight

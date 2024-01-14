@@ -7,39 +7,47 @@ export type Responses = {
 
 export const ConfigSchema = z.object({
   prefix: z.string().default("!"),
-  console_channel: z.string(),
-  bot_token: z.string(),
-  api_port: z.number(),
-  guild_id: z.string(),
-  client_id: z.string(),
-  status: z.string().optional(),
-  join_channel: z.string(),
-  join_message: z.string(),
-  accept_channel: z.string(),
-  accept_message: z.string(),
-  member_role: z.string(),
-  admin_role: z.string(),
-  owners: z.string().array(),
+  token: z.string(),
+  guildId: z.string(),
+  clientId: z.string(),
+  consoleChannel: z.string(),
+  server: z
+    .object({
+      websocketPort: z.number(),
+      apiPort: z.number(),
+      token: z.string(),
+    })
+    .optional(),
   applications: z.object({
     timeout: z.number(),
     channel: z.string(),
     questions: z.array(z.string()),
   }),
-  interviews: z.object({
-    notification: z.string(),
-    role: z.string(),
-    channel: z.string(),
-    private: z.boolean(),
+  interviews: z
+    .object({
+      enabled: z.boolean(),
+      role: z.string(),
+      channel: z.string(),
+      private: z.boolean(),
+      notification: z.string(),
+    })
+    .optional(),
+  onboarding: z.object({
+    joinChannel: z.string(),
+    joinMessage: z.string(),
+    acceptChannel: z.string(),
+    acceptMessage: z.string(),
+    memberRole: z.string(),
   }),
-  whitelist_manager: z.object({
-    enabled: z.boolean(),
-    inactivity: z.object({
+  whitelistManager: z
+    .object({
+      enabled: z.boolean(),
       message: z.string(),
-      vacation_role: z.string(),
-      remove_inactive_player_after_days: z.number(),
-      grace_period_days: z.number(),
+      vacationRole: z.string(),
+      removeInactivePlayerAfterDays: z.number(),
+      gracePeriodDays: z.number(),
       timezone: z.string(),
       cron: z.string(),
-    }),
-  }),
+    })
+    .optional(),
 });

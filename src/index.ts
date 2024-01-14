@@ -47,12 +47,12 @@ for (const folder of commandFolders) {
 }
 
 // Construct and prepare an instance of the REST module
-const rest = new REST().setToken(config.bot_token);
+const rest = new REST().setToken(config.token);
 
 // Delete all guild commands
 (async () => {
   rest
-    .put(Routes.applicationGuildCommands(config.client_id, config.guild_id), {
+    .put(Routes.applicationGuildCommands(config.clientId, config.guildId), {
       body: [],
     })
     .then(() => logger.info("Successfully deleted all guild commands."))
@@ -64,7 +64,7 @@ const rest = new REST().setToken(config.bot_token);
   try {
     // The put method is used to fully refresh all commands in the guild with the current set
     const data = await rest.put(
-      Routes.applicationGuildCommands(config.client_id, config.guild_id),
+      Routes.applicationGuildCommands(config.clientId, config.guildId),
       { body: commands },
     );
 
@@ -94,4 +94,4 @@ for (const file of eventFiles) {
   }
 }
 
-client.login(client.config.bot_token);
+client.login(client.config.token);

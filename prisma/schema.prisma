@@ -24,6 +24,8 @@ model Interview {
   thread_id      String      @unique
   application_id Int         @unique
   status         Status
+  admin_id       String?
+  reason         String?
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt
   is_deleted     Boolean     @default(false)

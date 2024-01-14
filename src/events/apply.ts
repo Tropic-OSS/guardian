@@ -1,10 +1,22 @@
-import { ButtonInteraction, EmbedBuilder, Events, GuildMember, Interaction, Message, StageChannel, TextChannel } from "discord.js";
-import { APPLICATION_ROW, APPLICATION_STATUS, BUTTON_IDS } from "../lib/constants";
+import {
+  ButtonInteraction,
+  EmbedBuilder,
+  Events,
+  GuildMember,
+  Interaction,
+  Message,
+  StageChannel,
+  TextChannel,
+} from "discord.js";
+import {
+  APPLICATION_ROW,
+  APPLICATION_STATUS,
+  BUTTON_IDS,
+} from "../lib/constants";
 import { cache, prisma } from "../lib/db";
 import { logger } from "../lib/logger";
 import { Responses } from "../types/types";
 import { Application } from "@prisma/client";
-import { json } from "stream/consumers";
 const wait = require("node:timers/promises").setTimeout;
 
 module.exports = {
@@ -62,7 +74,7 @@ async function sendQuestions(interaction: ButtonInteraction) {
 
     const questions = interaction.client.config.applications.questions;
 
-    await interaction.editReply({ content: "Check your direct messages" })
+    await interaction.editReply({ content: "Check your direct messages" });
 
     wait(10000).then(async () => {
       await interaction.deleteReply();
@@ -77,23 +89,30 @@ async function sendQuestions(interaction: ButtonInteraction) {
     while (index < questions.length) {
       const question = questions[index++];
 
-      const embed = new EmbedBuilder().setTitle(`Question: ${index}`).setDescription(question).setColor('Aqua').setTimestamp();
+      const embed = new EmbedBuilder()
+        .setTitle(`Question: ${index}`)
+        .setDescription(question)
+        .setColor("Aqua")
+        .setTimestamp();
 
-      const { channel } = await member.send({ embeds: [embed] })
+      const { channel } = await member.send({ embeds: [embed] });
 
       if (channel instanceof StageChannel) return;
 
       const collector = channel.createMessageCollector({ filter });
 
-      await new Promise((resolve) => collector.once('collect', resolve));
+      await new Promise((resolve) => collector.once("collect", resolve));
 
       responses.push({
         question: question,
-        content: collector.collected.first()!.content
+        content: collector.collected.first()!.content,
       });
     }
 
-    const reply = new EmbedBuilder().setTitle('Application Received').setColor('Yellow').setTimestamp();
+    const reply = new EmbedBuilder()
+      .setTitle("Application Received")
+      .setColor("Yellow")
+      .setTimestamp();
 
     await member.send({ embeds: [reply] });
 
@@ -101,31 +120,39 @@ async function sendQuestions(interaction: ButtonInteraction) {
       data: {
         discord_id: member.id,
         status: APPLICATION_STATUS.PENDING,
-        answers: JSON.stringify(responses)
-        
-      }
+        answers: JSON.stringify(responses),
+      },
     });
 
     sendApplication(interaction, responses, application);
   } catch (error) {
     interaction.followUp({
       content:
-        'Something went wrong trying to send questions to your Direct Messages. If you have direct messages disabled from this server, please enable them and try again.',
-      ephemeral: true
+        "Something went wrong trying to send questions to your Direct Messages. If you have direct messages disabled from this server, please enable them and try again.",
+      ephemeral: true,
     });
 
     logger.error(error);
   }
 }
 
-async function sendApplication(interaction: ButtonInteraction, responses: Responses, application: Application) {
+async function sendApplication(
+  interaction: ButtonInteraction,
+  responses: Responses,
+  application: Application,
+) {
   try {
-    const channel = await interaction.client.channels.fetch(interaction.client.config.applications.channel) as TextChannel;
+    const channel = (await interaction.client.channels.fetch(
+      interaction.client.config.applications.channel,
+    )) as TextChannel;
 
     if (!channel) {
-      Error('Applications Channel not found');
+      Error("Applications Channel not found");
 
-      return interaction.followUp({ content: `Something went wrong trying to send your application. Please contact an admin for help. Application ID ${application.id}`, ephemeral: true });
+      return interaction.followUp({
+        content: `Something went wrong trying to send your application. Please contact an admin for help. Application ID ${application.id}`,
+        ephemeral: true,
+      });
     }
 
     const member = interaction.member as GuildMember;
@@ -134,15 +161,15 @@ async function sendApplication(interaction: ButtonInteraction, responses: Respon
       return {
         name: question,
         value: content,
-        inline: false
+        inline: false,
       };
     });
 
     const embed = new EmbedBuilder()
-      .setColor('Yellow')
+      .setColor("Yellow")
       .setAuthor({
         name: member.displayName,
-        iconURL: member.user.displayAvatarURL({ forceStatic: false })
+        iconURL: member.user.displayAvatarURL({ forceStatic: false }),
       })
       .setTitle(`${member.user.tag} has submitted an application`)
       .setThumbnail(member.displayAvatarURL({ forceStatic: false }))
@@ -151,19 +178,23 @@ async function sendApplication(interaction: ButtonInteraction, responses: Respon
 
     const message = await channel.send({
       embeds: [embed],
-      components: [APPLICATION_ROW]
+      components: [APPLICATION_ROW],
     });
 
     await prisma.application.update({
       where: {
-        id: application.id
+        id: application.id,
       },
       data: {
-        message_id: message.id
-      }
+        message_id: message.id,
+      },
     });
 
-    await interaction.followUp({ content: 'Your application has been submitted. Please wait for your application to be reviewed.', ephemeral: true });
+    await interaction.followUp({
+      content:
+        "Your application has been submitted. Please wait for your application to be reviewed.",
+      ephemeral: true,
+    });
   } catch (error) {
     logger.error(error);
   }

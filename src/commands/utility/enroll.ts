@@ -24,7 +24,7 @@ module.exports = {
       );
 
     const channel = await interaction.guild.channels.fetch(
-      interaction.client.config.join_channel,
+      interaction.client.config.onboarding.joinChannel,
     );
 
     if (!channel) return interaction.reply("Join channel not found.");
@@ -41,7 +41,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor("Blue")
         .setTitle("Beep Boop")
-        .setDescription(interaction.client.config.join_message)
+        .setDescription(interaction.client.config.onboarding.joinMessage)
         .setTimestamp();
 
       await channel.send({ embeds: [embed], components: [row] });
